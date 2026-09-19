@@ -7,9 +7,9 @@ export async function proxy(request: NextRequest) {
   const locale = request.nextUrl.pathname.split('/')[1];
   request.headers.set('x-med-locale', isLocale(locale) ? locale : 'en');
   let response = NextResponse.next({ request });
-  if (backendConfigured() && /\/(workspace|records|login)(\/|$)/.test(request.nextUrl.pathname)) {
+  if (backendConfigured() && /\/(workspace|records|login|admin|register)(\/|$)/.test(request.nextUrl.pathname)) {
     const client = createServerClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
-      cookieOptions: { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' },
+      cookieOptions: { httpOnly: true, secure: process.env.NODE_ENV === 'production' && process.env.MED_ASSISTANT_LOCAL_HTTP !== 'true', sameSite: 'lax', path: '/' },
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll(values) {

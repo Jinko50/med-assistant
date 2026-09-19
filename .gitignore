@@ -35,3 +35,4 @@ private-evidence/
 playwright-report/
 test-results/
 transfer-dist/
+app-config.json

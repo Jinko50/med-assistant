@@ -14,7 +14,7 @@ const auth = await request('/auth/v1/settings');
 assert.equal(auth.status, 200, 'Auth endpoint unavailable or project/key mismatch');
 assert.equal(auth.data.external.email, true, 'Email authentication must be enabled');
 console.log('PASS: Supabase Auth reachable; publishable key accepted; email authentication enabled.');
-for (const table of ['patients', 'patient_access', 'record_sources', 'medical_records', 'record_revisions', 'audit_events', 'schema_versions']) {
+for (const table of ['patients', 'patient_access', 'record_sources', 'medical_records', 'record_revisions', 'audit_events', 'schema_versions', 'app_admins', 'managed_accounts', 'access_audit']) {
   const result = await request(`/rest/v1/${table}?select=*&limit=0`);
   assert.ok([401, 403].includes(result.status), `${table}: expected denied anonymous access, got ${result.status}`);
   assert.equal(result.data.code, '42501', `${table}: expected permission denial, not a missing-table error`);

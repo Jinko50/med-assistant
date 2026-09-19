@@ -7,7 +7,7 @@ export async function database() {
   if (!backendConfigured()) throw new Error('BACKEND_UNAVAILABLE');
   const store = await cookies();
   return createServerClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
-    cookieOptions: { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/' },
+    cookieOptions: { httpOnly: true, secure: process.env.NODE_ENV === 'production' && process.env.MED_ASSISTANT_LOCAL_HTTP !== 'true', sameSite: 'lax', path: '/' },
     cookies: {
       getAll: () => store.getAll(),
       setAll(values) {

@@ -1,19 +1,21 @@
-MED ASSISTANT — WINDOWS TEST PREVIEW
+MED ASSISTANT — WINDOWS TEST BUILD
 
 1. Right-click the downloaded ZIP and select Extract All.
 2. Open the extracted folder.
 3. Double-click Start Med Assistant.cmd.
-4. Your browser opens the Russian patient view. EN and Hebrew are also available.
+4. Your browser opens login in a connected build, or fictional records in a preview build.
 
 No Node.js, Python, Git, Codex or package installation is required.
 Keep the app's small console window open while using it. Close it to stop.
 The app listens only on this computer and chooses a free port automatically.
 You can move the extracted folder or delete it when finished.
 
-This release contains FICTIONAL, READ-ONLY demonstration records.
-It is not the finished medical assistant. Real login, shared records and
-medical AI are not available in this download. Do not enter real patient data.
-The GitHub README tracks the remaining work toward the finished product.
+If app-config.json is present, this build connects to the configured Supabase
+project for account and shared-record testing. Only approved, verified accounts
+can access records. Without that file, it opens a read-only fictional preview.
+Neither mode is the finished medical assistant. Use fictional records only.
+Medical AI and uploads are unavailable. See the GitHub installation/admin guide:
+https://github.com/Jinko50/med-assistant/blob/main/docs/INSTALL_AND_ADMIN.md
 
 Windows 10/11 x64. Windows on ARM and macOS are not verified.
 This is unsigned software; Windows or your organization's policies may block it.

@@ -1,0 +1,4 @@
+'use client';
+import {useActionState} from 'react';
+import {registerAccount} from '../app/register-actions';
+export function RegisterForm(){const [state,action,pending]=useActionState(registerAccount,{message:''});return <form action={action} className="login-form"><label>Email approved by your administrator<input type="email" name="email" required maxLength={254} autoComplete="username"/></label><label>Choose a password (at least 12 characters)<input type="password" name="password" minLength={12} maxLength={128} required autoComplete="new-password"/></label><label>Repeat password<input type="password" name="confirm" minLength={12} maxLength={128} required autoComplete="new-password"/></label><button className="button primary" disabled={pending}>Create my account</button><p role="status">{state.message}</p></form>;}

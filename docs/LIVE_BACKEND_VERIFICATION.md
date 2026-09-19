@@ -1,5 +1,22 @@
 # Hosted backend setup — 2026-09-19
 
+## Fixed-account milestone
+
+Migration 002 is now deployed. The three added tables (`app_admins`, `managed_accounts`,
+`access_audit`) have RLS and deny anonymous reads, verified against the live API.
+Only an operator can bootstrap the first administrator. Admin functions manage approved
+email roles and revocation with audit events and optimistic version checks. Verified
+users claim only pre-approved access; claiming again never restores a revoked membership.
+Five additional PGlite tests pass, bringing database integration coverage to 16 tests.
+The production build and TypeScript checking pass. Authenticated live user testing is
+still pending because an admin identity and email delivery have not been configured.
+The installer guide explicitly documents these requirements and the unfinished medical features.
+The final connected ZIP was extracted into a path containing spaces and passed the bundled
+runtime test: login enabled, registration available, anonymous admin denied, fictional preview
+disabled, assets loaded, and clinical readiness still blocked. The test exited 0 with cleanup.
+All 10 existing desktop/mobile browser regressions also passed. These checks did not create
+or log into real Auth identities and must not be described as full account acceptance.
+
 The user-provided Supabase project was connected through an ignored local environment
 file. No backend configuration or credentials were committed or included in a release.
 The signed-in dashboard showed a healthy new project with zero public tables.

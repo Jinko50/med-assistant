@@ -11,5 +11,6 @@ export function LoginForm({ locale, configured }: { locale: Locale; configured: 
     <label htmlFor="password">{t.password}<input type="password" name="password" id="password" autoComplete="current-password" required maxLength={256} disabled={!configured}/></label>
     {state.status !== 'idle' && <p className="form-status error" role="status">{t[state.status]}</p>}
     <button className="button primary" disabled={!configured || pending} type="submit">{t.signIn}<Icon name="arrow" size={18}/></button>
+    {configured && <a href={`/${locale}/register`}>First time? Set up your approved account</a>}
   </form>;
 }

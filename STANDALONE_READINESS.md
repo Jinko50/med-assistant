@@ -4,6 +4,7 @@
 
 | Requirement | Implementation location | Verification / evidence | Status | Remaining issue |
 |---|---|---|---|---|
+| Fixed-user administration | migration 002; admin page/actions; register page | 5 SQL tests for admin-only changes, verified claims, shared access, stale writes and revocation; live anonymous denial | PARTIAL | Bootstrap admin identity, configure email delivery, authenticated end-to-end tests, recovery flow, localized registration/admin UI |
 | Takeover audit and milestone plan | docs/CODEX_TAKEOVER_AUDIT.md; docs/STANDALONE_IMPLEMENTATION_PLAN.md | Repository inventory, baseline utility outputs | PASS | Architectural choices need implementation |
 | Preserve historical safety assets and scenario inventory | project, docs, tests, review_package | Static checks; unit inventory assertions for 79 parents / 34 gating inputs | PASS | Historical prose contradictions remain flagged |
 | Pure patient/caregiver capability policy | packages/domain/access.ts | tests/unit/access.test.ts | PASS | Live provider integration remains to verify |

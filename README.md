@@ -4,8 +4,10 @@
 
 Get the ZIP from [Releases](https://github.com/Jinko50/med-assistant/releases), extract it,
 and open **Start Med Assistant.cmd**. [Windows instructions](docs/WINDOWS_DOWNLOAD.md).
-The first download is a **fictional, read-only preview**. Real shared records, login and
-medical chat are not enabled in it. The finished patient app is still in development.
+The original download is a fictional, read-only preview. The connected account-testing
+release adds registration, shared records and an admin portal with approved email roles.
+Follow [installation and administration](docs/INSTALL_AND_ADMIN.md). Account setup and
+live acceptance tests remain required; medical chat is unavailable.
 
 **Current status (2026-09-19): not ready for patient use.** The deliverable is now a standalone application. The ChatGPT Project material below is a preserved prototype and requirements source; its Phase 1 scope and zero-execution statements are historical, not current status.
 

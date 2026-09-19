@@ -1,17 +1,17 @@
-# Windows preview v0.1.0-preview.1
+# Connected Windows account-testing build
 
 Download **Med-Assistant-Windows-x64.zip**, choose **Extract All**, and double-click
-**Start Med Assistant.cmd**. No Node, Python, Git or other developer packages are required.
-Windows 10/11 x64; a browser opens automatically. Keep the console open while testing.
+**Start Med Assistant.cmd**. Windows 10/11 x64; no Node, Python, Git or Codex installation.
 
-This is a **fictional, read-only test preview**, not a finished medical application.
-It includes Russian, English and Hebrew patient/caregiver views. Real login, shared
-records, document uploads and medical AI are not available in this release.
+This build connects to the configured Supabase project. It includes account registration,
+an admin portal to approve emails and assign patient/caregiver roles, access revocation,
+shared records and history. Admins must be bootstrapped by the Supabase project owner.
 
-Verified from an extracted ZIP: bundled runtime, all three languages, static assets,
-caregiver preview, disabled login, health endpoint and blocked clinical readiness.
-Source checks: 15 unit tests, 11 SQL integration tests, TypeScript and production build.
+Follow [installation and account administration](https://github.com/Jinko50/med-assistant/blob/main/docs/INSTALL_AND_ADMIN.md).
+Email delivery configuration and live two-account tests remain pending. Only use fictional
+records. Medical AI, document upload/extraction, recovery and production release gates are
+unfinished; this is a prerelease, not a patient-ready medical assistant.
 
-The companion `.sha256` file contains the download checksum. The ZIP contains a per-file
-manifest and runtime license. This release is unsigned. The repository README and
-STANDALONE_READINESS.md track the work required before patient use.
+The ZIP contains public app connection settings and a bundled runtime, but no database
+password or privileged keys. It listens only on this computer. The app is unsigned.
+Keep the console open while testing. Close it to stop the app.

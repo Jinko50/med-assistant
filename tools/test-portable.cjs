@@ -3,6 +3,7 @@ const path = require('node:path');
 const { spawn, execFileSync } = require('node:child_process');
 const { chromium } = require('@playwright/test');
 const root = path.resolve(process.argv[2]);
+const connected = require('node:fs').existsSync(path.join(root,'app-config.json'));
 const child = spawn(path.join(root, 'runtime/node.exe'), [path.join(root, 'launch.cjs'), '--no-browser'], {
   cwd: root, windowsHide: true, env: { ...process.env, PATH: process.env.SystemRoot + '\\System32' },
 });
@@ -16,7 +17,7 @@ let output = '';
 child.stderr.on('data', data => process.stderr.write(data));
 child.stdout.on('data', async data => {
   output += data;
-  const match = output.match(/APP_READY (http:\/\/127\.0\.0\.1:\d+)\/ru\/preview\/patient/);
+  const match = output.match(/APP_READY (http:\/\/127\.0\.0\.1:\d+)\/ru\/(?:preview\/patient|login)/);
   if (!match || browser) return;
   browser = true;
   try {
@@ -29,6 +30,19 @@ child.stdout.on('data', async data => {
     const failures = [];
     page.on('pageerror', error => failures.push(error.message));
     page.on('response', response => { if (response.url().includes('/_next/static/') && !response.ok()) failures.push(response.url()); });
+    if(connected) {
+      await page.goto(base+'/ru/login');
+      assert.equal(await page.locator('input[name=email]').isEnabled(),true);
+      await page.goto(base+'/en/register');
+      assert.equal(await page.getByRole('button',{name:'Create my account'}).isEnabled(),true);
+      await page.goto(base+'/en/admin');
+      assert.equal(await page.getByRole('heading',{name:'Account administration'}).count(),0);
+      assert.equal(await page.getByRole('button',{name:'Approve email address'}).count(),0);
+      assert.equal((await page.goto(base+'/en/preview/patient')).status(),404);
+      assert.deepEqual(failures,[]);
+      console.log('PASS: connected extracted app, enabled login, registration, anonymous admin denial, preview disabled, assets and blocked clinical readiness. Live authenticated flows still require account setup.');
+      return;
+    }
     for (const locale of ['ru', 'en', 'he']) {
       await page.goto(base + '/' + locale + '/preview/patient');
       assert.equal(await page.locator('html').getAttribute('lang'), locale);
