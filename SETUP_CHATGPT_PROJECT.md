@@ -30,6 +30,7 @@ You need:
 
 1. Open `project/MED_ASSISTANT_SYSTEM_PROMPT.md`.
 2. Copy **Part A only** — from `## A1 SAFETY FLOOR` down to the `END OF PART A` marker.
+   **Then replace `<<EMERGENCY_NUMBER>>` with the real local emergency number before pasting.** This is the one substitution you must make; the number is in the prompt rather than a file because the assistant is forbidden to read files during an emergency. Execution on 2026-09-19 showed that when it lived in a file it was never retrieved.
 3. Paste it into the project's **Instructions** field.
 4. **Check it was not truncated.** Scroll to the end of the field and confirm the last line is the `TIMING, NOT TIERS` paragraph. Silent truncation is the most likely setup failure, and it removes safety rules without warning.
 5. Save.

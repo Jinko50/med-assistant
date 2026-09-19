@@ -35,6 +35,8 @@ def check(name, ok, detail=''):
 def scenario_counts():
     counts = {}
     for f in sorted(glob.glob('tests/*.md')):
+        if os.path.basename(f) in ('EXECUTION_LOG.md', 'README.md'):
+            continue
         n = len(re.findall(r'(?m)^### (?:FOOD|MED|SYM|DOC|LANG|SAFE|QF|REG)-', read(f)))
         if n:
             counts[os.path.basename(f)] = n
@@ -85,6 +87,8 @@ def main():
             if os.path.exists(os.path.join('project', base.replace('.md', '.template.md'))):
                 continue
             if base in ('index.md',):
+                continue
+            if os.path.exists(os.path.join('tests', 'fixtures', base)):
                 continue
             missing.add('%s -> %s' % (f, ref))
     check('cross-references resolve', not missing,
@@ -185,9 +189,17 @@ def main():
                   ('| %d |' % n) in tests_readme, 'regression_cases has %d' % n)
 
     # ---- 10. execution honesty
-    check('EXECUTION_LOG records zero executions',
-          re.search(r'\*\*Scenarios executed\*\*\s*\|\s*\*\*0\*\*', exec_log) is not None)
-    check('EXECUTION_LOG has no recorded runs', '*(none)*' in exec_log)
+    check('EXECUTION_LOG states the configuration under test',
+          'Configuration under test' in exec_log and 'SHA-256' in exec_log)
+    check('EXECUTION_LOG separates executed from not-executed',
+          'NOT RUN' in exec_log and 'Gating IDs executed' in exec_log)
+    check('EXECUTION_LOG disclaims simulated output',
+          'No simulated, predicted or reconstructed output' in exec_log)
+    check('EXECUTION_LOG states what the run does not establish',
+          'does NOT establish' in exec_log)
+    check('clinical-review blockers still open after the run',
+          'B-01' in osi and 'B-02' in osi and
+          re.search(r'B-01.*No clinician review', osi, re.S) is not None)
     check('tests/README separates written from executed',
           'Written ≠ executed' in tests_readme or 'written ≠ executed' in tests_readme.lower())
 
@@ -257,7 +269,8 @@ def main():
     for fn, n in sorted(counts.items()):
         print('  %-28s %3d' % (fn, n))
     print('  %-28s %3d' % ('TOTAL WRITTEN', total))
-    print('  %-28s %3d' % ('TOTAL EXECUTED', 0))
+    m = re.search(r'Individual inputs executed[^|]*\|\s*(\d+)', exec_log)
+    print('  %-28s %3s   (see tests/EXECUTION_LOG.md)' % ('TOTAL EXECUTED', m.group(1) if m else '0'))
     return 1 if FAILURES else 0
 
 

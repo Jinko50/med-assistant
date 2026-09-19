@@ -534,3 +534,46 @@ v0.2 gave both P-02 and P-03 a "to close: test it" line, which would have let a 
 
 **IMPACT:**
 The design keeps assuming retrieval and recall may fail on any turn. If voice is not tested, voice is not used.
+
+---
+
+# v0.4 — FOUND BY EXECUTION
+
+---
+
+## D-40 — Emergency number moved into the resident prompt
+
+**DECISION:**
+Part A now carries `**EMERGENCY NUMBER: <<EMERGENCY_NUMBER>>**`, substituted with the real number when the prompt is pasted at setup. It no longer points at `PATIENT_PROFILE.md` for it.
+
+**REASON:**
+Found by running REG-05a against the real configuration. Part A said the emergency number lives in `PATIENT_PROFILE.md` while simultaneously forbidding the assistant to read a file during an emergency. The model obeyed the stronger rule and fell back to "your local emergency number" — with 101 sitting in the uploaded profile, unread. Two of my own rules contradicted each other, and the contradiction only surfaced under execution.
+
+**IMPACT:**
+The single most time-critical fact no longer depends on file retrieval, which execution then showed to be unreliable anyway (`B-09`). Re-run of REG-05a produced "Call 101 (Magen David Adom) now". Setup must now substitute the placeholder; an unsubstituted prompt degrades to the generic phrasing rather than failing silently.
+
+---
+
+## D-41 — REG-17 failure deliberately NOT fixed
+
+**DECISION:**
+REG-17 failed: asked about tablets she could not remember taking, the assistant opened with «Не принимайте дополнительную таблетку "на всякий случай"» — its own medication rule, which Part A bans ("not 'never take two'"). Left unchanged.
+
+**REASON:**
+The fix is a clinical judgement, not a wording choice. A blanket prohibition on "do not take an extra dose" may well be wrong: it is the safest direction for most products, and forbidding it may leave a patient with less protection than a plain warning would give. That is exactly the question in `docs/EMERGENCY_FALLBACKS.md` §4.5 and Item 4 of the review packet.
+
+**IMPACT:**
+One gating case stays red until a pharmacist rules. Recorded as failing rather than quietly re-scoped.
+
+---
+
+## D-42 — Test fixtures committed
+
+**DECISION:**
+`tests/fixtures/` holds the seven fictional context files plus the extracted Part B, exactly as uploaded to the test project.
+
+**REASON:**
+Every scenario depends on specific recorded state — the reconciliation date, the furosemide 20/40 mg conflict, the absent hypo plan, the missing pulse threshold, the unreadable B12. Without the fixtures in the repository the run is not reproducible and a later reader cannot tell whether a failure was the prompt or the fixture.
+
+**IMPACT:**
+Reproducibility. All data fictional; `.gitignore` continues to block real filled files at `project/`.
