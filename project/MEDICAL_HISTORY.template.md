@@ -8,7 +8,7 @@
 
 ## Active diagnoses
 
-| Diagnosis | Since | Managed by | Current status | Source |
+| Diagnosis | Since | Managed by | Current status | Source + date |
 |---|---|---|---|---|
 | | | | | |
 
@@ -29,10 +29,11 @@
 
 ## Allergies and adverse reactions
 
-| Substance | Reaction | Severity | Confirmed or reported? |
+| Substance | Reaction | Severity | Provenance (DOCUMENTED / REPORTED) + date |
 |---|---|---|---|
 
 > Distinguish a true allergy from an intolerance or a side effect — they lead to different decisions.
+> A reported allergy is not a documented one. Record which it is; the assistant will say which when it matters.
 
 ## Implants and devices
 
@@ -65,7 +66,7 @@
 
 ### Active diagnoses
 
-| Diagnosis | Since | Managed by | Current status | Source |
+| Diagnosis | Since | Managed by | Current status | Source + date |
 |---|---|---|---|---|
 | Atrial fibrillation, permanent | 2019 | Dr. Kaplan, cardiology | Rate controlled; anticoagulated on warfarin | discharge letter 2019-11 |
 | Hypertension | 2008 | Dr. Levin | Usually 135–145/80–85 | clinic letter |
@@ -96,11 +97,11 @@
 
 ### Allergies and adverse reactions
 
-| Substance | Reaction | Severity | Confirmed or reported? |
+| Substance | Reaction | Severity | Provenance + date |
 |---|---|---|---|
-| Penicillin | Widespread rash | Moderate | Reported (1998, no record) |
-| Sulfa drugs | Unknown | Unknown | Reported by patient, unverified |
-| Codeine | Severe nausea | — | Intolerance, not allergy |
+| Penicillin | Widespread rash | Moderate | REPORTED by patient; event ~1998, no record held |
+| Sulfa drugs | Unknown | Unknown | REPORTED by patient, unverified |
+| Codeine | Severe nausea | — | REPORTED — intolerance, not allergy |
 
 ### Implants and devices
 

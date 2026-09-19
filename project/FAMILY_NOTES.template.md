@@ -3,7 +3,9 @@
 > Context that is not strictly clinical but changes how the assistant should behave.
 > Maintained by family. Upload as `FAMILY_NOTES.md`.
 >
-> **The patient can see this file.** Everyone in the Shared Project can. Write nothing here you would not say in front of them.
+> **The patient can see this file.** Everyone with access to the Shared Project can: OpenAI's sharing offers *chat* and *edit* access levels, and both can read everything in the project. There are no per-file permissions. Write nothing here you would not say in front of the patient.
+>
+> Preferences **the patient expressed themselves** are their instructions, and the assistant honours them. Preferences the family holds *about* the patient do not override the patient's right to their own information.
 > Everything below the `EXAMPLE` line is fictional and can be deleted.
 
 **Last updated:** YYYY-MM-DD by ______
@@ -49,7 +51,8 @@
 
 ## Things the assistant should not ask the patient
 
-> Feed the question engine. Anything here is off-limits as a patient-facing question and goes to family instead.
+> Feed the question engine. Anything here is off-limits as a *routine* patient-facing question and goes to the family instead.
+> **This never blocks a clarification genuinely needed for safety**, which is always allowed — see `../docs/QUESTION_ENGINE.md` §0.
 
 - 
 
@@ -80,7 +83,9 @@
 
 - Avoid: the word "деменция" unless a doctor has said it; anything that sounds like she is being checked up on.
 - Reassures her: being told plainly what is normal for her specifically; hearing that something has been written down so nobody will forget it.
-- Route to family: anything about prognosis, anything found in a document she has not seen, anything about her driving or living alone.
+- She has said she wants to be told her own results and findings **directly**. Honour that — it is her instruction.
+- She has asked the family to handle logistics and insurance paperwork.
+- She has *not* asked to be shielded from her own medical information, and the assistant must not assume she has.
 
 ### Observations from visits
 

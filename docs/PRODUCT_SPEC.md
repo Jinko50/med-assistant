@@ -1,6 +1,8 @@
-# MED ASSISTANT v0.1 — PRODUCT SPECIFICATION
+# MED ASSISTANT v0.2 — PRODUCT SPECIFICATION
 
-> **Provenance note.** The original "Med Assistant v0.1 Product & Technical Specification" was referenced but not supplied to the implementer. This document reconstructs the specification from the product rules given in the build brief. Where it goes beyond that brief, the addition is recorded in `../IMPLEMENTATION_DECISIONS.md`. Reconcile against the original before treating this as authoritative.
+> **UNRESOLVED — the original specification was never supplied.** The "Med Assistant v0.1 Product & Technical Specification" referenced in the brief did not reach the implementer. This document is a **reconstruction** from the brief's bullet points and may contradict the real specification on scope, intent or safety posture. It is **not authoritative**. See `OPEN_SAFETY_ISSUES.md` B-04.
+>
+> **v0.2** incorporates a safety review. Nothing here has been reviewed by a clinician or pharmacist, and no part of the system has been executed or tested. No claim of clinical validation is made.
 
 ---
 
@@ -57,7 +59,7 @@ Clinicians. Output may be *shown* to a doctor, but the product is not designed f
 1. **Longitudinal, not transactional.** Every message is answered in the context of the whole patient record. Treating a message as isolated is a defect.
 2. **Answer, don't interview.** Routine question budget is 0–1 (`QUESTION_ENGINE.md`).
 3. **Short for the patient, deep for the caregiver.** Same knowledge, two registers.
-4. **Honest uncertainty.** Five provenance levels; assumptions are visible.
+4. **Honest uncertainty.** Five provenance levels, every fact dated; unknowns stay unknown and are never filled in.
 5. **Safety without noise.** Real escalation when it matters; no reflexive "consult your doctor" on everything.
 6. **Teach gently, rarely.** One tip at a time, only when it would have changed today's answer.
 7. **Never feel like homework.**
@@ -67,29 +69,35 @@ Clinicians. Output may be *shown* to a doctor, but the product is not designed f
 | # | Capability | Definition of done |
 |---|---|---|
 | F1 | Food and drink safety | Answers "can I eat this" against the actual medication list and conditions, with a practical portion |
-| F2 | Medication information | Purpose, timing, food rules, side effects, interactions, missed/double doses — never a prescription change |
-| F3 | Symptom response | Triage tier assigned, escalation clear, no diagnosis stated as certain |
-| F4 | Document understanding | Reads RU/HE/EN labs, prescriptions, discharge letters; extracts only what is legible; compares with history |
-| F5 | Longitudinal recall | Connects today's message to prior events and readings |
-| F6 | Proactive gap detection | Notices useful missing information — and mostly records it rather than asking |
+| F2 | Medication information | Purpose and plain-language explanation of what is recorded; routing of anything dose-related to the product leaflet, the prescriber's plan, or a pharmacist. **No dosing instructions of any kind**, and no rules of its own for missed or extra doses |
+| F3 | Symptom response | Explicit timing and a deterioration trigger given; emergencies escalated first and never delayed; no diagnosis stated as certain |
+| F4 | Document understanding | Reads RU/HE/EN labs, prescriptions, discharge letters; extracts only what is legible, with units as printed; compares with history by date; surfaces conflicts without resolving them |
+| F5 | Longitudinal recall | Connects today's message to prior events and readings **held in the project files**, with their dates. Not memory — the files are the record |
+| F6 | Proactive gap detection | Notices useful missing information — and mostly surfaces it for the family rather than asking the patient |
 | F7 | Caregiver briefing | On request, produces a structured summary suitable for an appointment |
-| F8 | Write-back proposals | Emits copy-paste blocks for the family to paste into the context files |
+| F8 | Write-back proposals | Emits copy-paste blocks, marked **PENDING**, for a person to paste in. The assistant cannot write to any file and never claims to have saved anything |
 
 ## 7. Information model
 
 ### 7.1 Provenance levels
 
-`CONFIRMED` (document) · `REPORTED` (said) · `OBSERVED` (seen in photo) · `ESTIMATED` (derived) · `ASSUMED` (gap-filled).
+`DOCUMENTED` (a dated document in this project said so) · `REPORTED` (someone said so) · `SEEN IN PHOTO` · `ESTIMATED` (derived, with the derivation stated) · `UNKNOWN`.
 
-Assumptions and estimates may never be rendered as fact. Unreadable document values may never be invented.
+`DOCUMENTED` replaces v0.1's `CONFIRMED`: a document shows what it said on its date, which is not the same as being true now. `ASSUMED` has been **deleted** — an unknown safety-relevant fact stays UNKNOWN and is named as such. Estimates may never be rendered as fact, and unreadable values may never be invented.
+
+Every fact carries a **source and a date**, and record freshness is stated whenever a fact is load-bearing.
 
 ### 7.2 Prescribed vs taken
 
 `CURRENT_MEDICATIONS.md` is a record of **prescription**, not of **intake**. Intake is only established by an explicit statement and is logged to `HEALTH_TIMELINE.md`. The assistant must never silently conflate the two — a large share of real-world elderly medication harm lives in exactly that gap.
 
-### 7.3 Pill identification
+### 7.3 Medicine identification
 
-Appearance is never identification. The assistant may state a resemblance and request packaging; where an unidentified pill is about to be taken, the instruction is to wait.
+Appearance is never identification, **and the assistant does not state a resemblance either** — a suggested resemblance is acted on as an identification by the person holding the tablet. It requests the packaging, advises against taking an unidentified medicine, and routes identification to a pharmacist.
+
+### 7.4 Conflicts
+
+Where two sources disagree, both are presented with their dates and the conflict is left **unresolved** for a person. Recency is evidence, not resolution.
 
 ## 8. Context files
 
@@ -104,6 +112,7 @@ Design constraint: they must be editable by a non-technical family member in a t
 | Requirement | Target |
 |---|---|
 | Cost | **Zero additional cost.** No paid API, SaaS or infrastructure introduced for the pilot |
+| Safety rules resident | All rules in `SAFETY_RULES.md` §1 live in the Instructions field, never in an uploaded file |
 | Patient-facing response length | Under ~60 words, 1–3 sentences of answer |
 | Questions per routine exchange | 0–1 |
 | Languages | RU / HE / EN, input and output |
@@ -117,7 +126,7 @@ The pilot is judged on whether the patient keeps using it without being reminded
 **Quantitative (over ~4 weeks)**
 - Patient-initiated messages in at least 60% of days used.
 - Median follow-up questions per routine exchange ≤ 0.3.
-- Zero unsafe outputs on the `/tests` safety set.
+- Zero unsafe outputs on the `/tests` safety and regression sets — **which requires actually running them; none has been run.**
 - Zero instances of the assistant asking for information already in the project files.
 
 **Qualitative**
@@ -129,6 +138,17 @@ The pilot is judged on whether the patient keeps using it without being reminded
 - The patient starts avoiding it, or asks the family to handle it instead.
 - Any output that could have caused harm.
 - The patient experiences it as a test of their memory.
+
+## 10a. What this system cannot do
+
+Stated here because the specification should not imply capabilities the platform lacks:
+
+- It **cannot save or change anything**. Every record update is manual.
+- It **cannot notify anyone**, ever, including in an emergency.
+- It **does not monitor** the patient and does not run between messages.
+- It **may not recall** earlier chats reliably. Shared projects use project-only memory; recall is not a record.
+- It **cannot check every interaction**, and says what it did check.
+- It **cannot verify** that anything in the files is correct.
 
 ## 11. Explicit non-goals
 

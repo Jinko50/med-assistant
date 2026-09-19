@@ -21,12 +21,12 @@ These are the constraints that would eventually justify building something:
 | Limit | Impact | Severity |
 |---|---|---|
 | **The model cannot write to project files** | Every durable fact requires a human to copy-paste. The record decays the moment the family gets busy | **The dominant limitation** |
-| No reliable structured memory | Recall across chats within a project is helpful but not guaranteed or inspectable | High |
+| No reliable structured memory | Shared projects use project-only memory; recall across chats in the project is not guaranteed, not inspectable, and is not a record | High |
 | No proactive messaging | The assistant can never check in, remind, or follow up. It only reacts | High |
 | No alerting | A red-flag exchange at 3am reaches nobody but the patient | High |
 | Voice is generic | No control over speech rate, repetition, or confirmation for a hard-of-hearing user | Medium |
 | No structured data | Trends over blood pressure or labs are reconstructed from prose each time | Medium |
-| Instruction length limits | The prompt must stay compact; nuance gets pushed into uploaded files | Medium |
+| Instruction length limits | OpenAI documents 1,500 / 5,000 characters for account-level custom instructions and does not publish the project field's limit. Safety rules must therefore be compressed to fit a field that may be small, and everything else pushed into files that may not be retrieved | **High** — it constrains what can be guaranteed resident |
 | Shared-project access is all-or-nothing | No separation between what the patient sees and what family discusses | Medium |
 | Not a compliant record | Blocks any use beyond one consenting family | High, for scale only |
 
@@ -82,13 +82,13 @@ If the patient did not use it, the correct Phase 2 is a different product, not a
 
 **Write-back agent.** Extracts durable facts from each exchange, proposes a structured update, applies it after family approval. Removes the pilot's dominant friction.
 
-**Triage screener as a separate pass.** Red-flag screening should not depend on the same generation that is trying to be brief and warm. A dedicated, cheap, deterministic-ish screen runs first and can force escalation.
+**Triage screener as a separate pass.** Red-flag screening should not depend on the same generation that is trying to be brief and warm. A dedicated, cheap, deterministic screen runs first and can force escalation. It would also remove the current dependency on a single prompt field being large enough to hold every safety rule.
 
 **Escalation channel.** A red-flag exchange notifies the family immediately, out of band. This is the single largest safety upgrade over Phase 1.
 
 **Proactive layer.** Gentle, rare check-ins, driven by the care plan rather than by a schedule. Must inherit the anti-nagging rules or it will destroy the product.
 
-**Ingestion.** Photograph → document classifier → conservative extraction → human confirmation for anything that will be stored as `CONFIRMED`.
+**Ingestion.** Photograph → document classifier → conservative extraction → human confirmation for anything that will be stored as `DOCUMENTED`.
 
 ## 6. Cost reality (for planning only — do not spend)
 
@@ -108,7 +108,7 @@ Decisions taken now that keep Phase 2 cheap:
 - Context files are **structured Markdown with stable field names**, so they can be parsed into a database later rather than re-entered.
 - Provenance levels are defined now, so history imported later carries its certainty with it.
 - The timeline is **append-only with explicit dates**, which is exactly what a structured store wants.
-- Triage tiers are named and stable, so a future screener can be evaluated against the same test suite.
+- Urgency is expressed as explicit timing and deterioration triggers rather than tiers, so a future screener can be evaluated against the same test suite without inheriting tier arithmetic.
 - The test suite in `/tests` is written as behaviour, not as prompt text, so it survives a platform change unchanged.
 
 ## 8. Alternatives worth considering before building anything

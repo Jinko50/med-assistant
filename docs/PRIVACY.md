@@ -35,6 +35,10 @@ A patient who does not know the family is reading everything has not consented.
 
 ## 4. Access control
 
+OpenAI documents two sharing levels for a project: **chat** access (see and interact with the project's chats, files and instructions) and **edit** access (additionally update instructions, upload or remove files, and invite others). Both levels can read everything. **There are no per-file permissions**, so there is no way to keep part of the record from someone who is in the project.
+
+Shared projects are set to **project-only memory** and cannot be switched to default memory; chats in the project may reference other chats in the same project but not conversations outside it. *(OpenAI Help Center, "Projects in ChatGPT"; retrieved 2026-09-19 via indexed summary — direct fetch returned 403, so re-verify in a browser.)*
+
 | Decision | Recommendation |
 |---|---|
 | Who is in the Shared Project | The smallest possible set: the patient's primary caregiver, plus at most one or two others |
@@ -42,7 +46,7 @@ A patient who does not know the family is reading everything has not consented.
 | Removing someone | Remove immediately when a person's role ends; they retain nothing further, but may have seen everything up to that point |
 | Account ownership | One family member owns it. Write down the recovery path — losing access to the account loses the record |
 
-There is no per-file permission inside a Shared Project. Everyone sees everything. Design the file contents accordingly.
+Everyone in the project sees everything. Design the file contents accordingly — and tell the patient who is in it, by name.
 
 ## 5. Data minimisation
 
@@ -64,7 +68,9 @@ Practical guidance:
 
 ## 7. The patient's own controls
 
-- The patient may ask for anything to be deleted. The family deletes it from the file and, where possible, from chat history.
+> These are things the family can do on request. **They are not guarantees**, because the underlying platform and its retention behaviour are not under the family's control.
+
+- The patient may ask for anything to be deleted. The family deletes it from the file and, where possible, from chat history. **Deletion from the files does not guarantee deletion from the provider's systems or backups.**
 - The patient may stop the pilot at any time, without justification.
 - The patient may ask what is stored about them, and is entitled to a plain-language answer.
 
@@ -78,12 +84,14 @@ Practical guidance:
 
 ## 9. Assistant-side rules
 
-These are carried in the system prompt and `SAFETY_RULES.md`:
+These are behavioural rules, **not security controls**. They reduce accidental disclosure by the assistant; they do not protect the data:
 
-- Patient data is not disclosed outside the project.
-- An unidentified person in the chat gets no patient information.
+- Patient data is not volunteered outside the project.
+- An unidentified person in the chat gets no patient information — though the assistant **cannot verify anyone's identity**, so this is a weak control.
 - Identifiers with no clinical value are not echoed back.
-- Sensitive history is not restated in summaries unless clinically necessary for the recipient.
+- Sensitive history is not restated in summaries unless clinically necessary.
+
+**The assistant must never tell anyone that their data is secure, private, protected or confidential.** It is not in a position to make that claim.
 
 ## 10. Honest residual risk
 
@@ -96,3 +104,18 @@ The realistic risks in this pilot, ranked:
 5. **Loss.** No backup means the record disappears with the account.
 
 None of these is a reason not to run the pilot. All of them are reasons to run it consciously, with one patient, for a limited time, and to build something properly scoped if it works.
+
+## 11. What is not guaranteed
+
+To be explicit, because earlier drafts implied more than is true:
+
+| Not guaranteed | Why |
+|---|---|
+| Deletion | Removing text from a file does not remove it from the provider's systems, backups or logs |
+| Confidentiality from the provider | Data is processed on third-party infrastructure under consumer terms that can change |
+| Confidentiality within the family | No per-file permissions; everyone in the project reads everything |
+| Access revocation being retroactive | Removing someone stops future access; it does not unsee what they saw |
+| Regulatory compliance | Not HIPAA-covered, not GDPR-engineered, no DPA, no defined retention |
+| Availability of the record | An account loss loses everything not backed up elsewhere |
+
+Anyone describing this pilot to the patient should describe it in these terms, not as "private".

@@ -15,7 +15,10 @@ One row per test per date. Newest date first within each table. If the report is
 |---|---|---|---|---|---|---|
 
 `Flag`: `↑` high, `↓` low, `—` normal, `?` unreadable.
+
 `Source`: `lab report photo 2026-06-02`, `clinic printout`, `told by doctor`.
+
+**Units are mandatory and are never converted.** Record the unit exactly as the report prints it. Glucose in particular differs by country (mg/dL vs mmol/L), and a silently converted value is a safety defect. Keep the lab's units even when they differ from the patient's home meter — record the meter's units in `PATIENT_PROFILE.md` instead.
 
 ## Key monitored values
 
@@ -60,7 +63,7 @@ These are the ones that drive decisions for this patient. List them here so the 
 | eGFR | 50 | mL/min/1.73m² | >60 | ↓ |
 | Potassium (אשלגן) | 3.4 | mmol/L | 3.5–5.1 | ↓ |
 | Sodium | 138 | mmol/L | 135–145 | — |
-| Glucose, fasting | 7.8 | mmol/L | 4.0–5.9 | ↑ |
+| Glucose, fasting | 140 | mg/dL | 70–100 | ↑ |
 | TSH | 2.1 | mIU/L | 0.4–4.0 | — |
 
 ### 2026-06-02 — Clalit lab, Dr. Levin, report in Hebrew
@@ -73,7 +76,7 @@ These are the ones that drive decisions for this patient. List them here so the 
 | eGFR | 52 | mL/min/1.73m² | >60 | ↓ |
 | Potassium | 4.1 | mmol/L | 3.5–5.1 | — |
 | HbA1c | 7.1 | % | <7.0 | ↑ |
-| Vitamin B12 | нечитаемо / unreadable | | | ? |
+| Vitamin B12 | нечитаемо / unreadable — **UNKNOWN, never estimate** | | | ? |
 | Ferritin | 42 | ng/mL | 13–150 | — |
 
 ### Trends worth watching

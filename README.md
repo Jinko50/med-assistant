@@ -1,88 +1,105 @@
-# Med Assistant v0.1
+# Med Assistant v0.2
 
-A longitudinal health companion for one elderly patient and their family, running entirely inside a **ChatGPT Shared Project**.
+A longitudinal health companion for one elderly patient and their family, running inside a **ChatGPT Shared Project**.
 
-**Phase 1 is documents, not software.** No web app, no mobile app, no backend, no paid services. The point is to find out whether an 84-year-old will actually use this, before anyone builds anything.
+> ## ⚠ Not ready for patient use
+>
+> v0.2 incorporates a safety review that found real defects in v0.1. Those are fixed in the documents — but:
+>
+> - **No clinician has reviewed this.** No pharmacist has reviewed this.
+> - **Nothing has been executed.** All 72 test scenarios are written, none has been run against a model.
+> - **No clinical validation is claimed**, and none exists.
+> - The original product specification referenced in the brief was never supplied, so `docs/PRODUCT_SPEC.md` is a reconstruction and is not authoritative.
+>
+> Blockers are tracked in [`docs/OPEN_SAFETY_ISSUES.md`](docs/OPEN_SAFETY_ISSUES.md). **Do not use this with a patient while any §1 blocker is open.**
+
+**Phase 1 is documents, not software.** No web app, no mobile app, no backend, no paid services.
 
 ---
 
 ## What this is
 
-A system prompt, seven patient-context templates, and a 59-scenario test suite — enough to run a real pilot with a real patient this week, at zero additional cost.
+A system prompt, seven patient-context templates, and a 72-scenario test suite.
 
-The assistant it produces:
+The assistant it is intended to produce:
 
-- remembers the patient's whole medical picture and answers in its context, not generically;
-- **asks almost nothing** — 0–1 follow-up questions in a routine exchange, always skippable;
-- speaks Russian, Hebrew and English, and reads documents in all three;
+- answers in the context of the patient's recorded history, with **dates and sources**, rather than generically;
+- **asks almost nothing** — 0–1 follow-up questions routinely, always skippable;
+- works in Russian, Hebrew and English, and reads documents in all three;
 - keeps patient answers short enough to work over voice, and gives family the depth they need;
-- never changes a prescription, never invents a value, never identifies a pill from a photo alone;
-- escalates real red flags clearly, and does not pad everything else with "consult your doctor".
+- **gives no medication instructions at all** — not doses, not schedules, not missed-dose rules — and routes those to the product's leaflet, the prescriber's plan, or a pharmacist;
+- escalates emergencies in the first sentence, with sourced, condition-specific holding actions, and never delays that for a question;
+- says plainly what it does not know, what it could not check, and what it cannot do.
 
----
+## What it cannot do
+
+Stated here because earlier drafts implied otherwise:
+
+| It cannot | Consequence |
+|---|---|
+| Save or change anything | Every record update is manual; the family maintains the files |
+| Notify anyone | An emergency exchange at 3am reaches nobody but the patient |
+| Monitor the patient | It does not run between messages |
+| Reliably recall past chats | The files are the record, not the model |
+| Check every interaction | It says what it checked |
+| Verify anything in the files | Garbage in, confident garbage out |
+| Guarantee privacy | See [`docs/PRIVACY.md`](docs/PRIVACY.md) §11 |
 
 ## Repository layout
 
 ```
 med-assistant/
-├── README.md                      ← you are here
-├── SETUP_CHATGPT_PROJECT.md       ← start here to run the pilot
-├── IMPLEMENTATION_DECISIONS.md    ← what was changed from the brief, and why
+├── README.md
+├── SETUP_CHATGPT_PROJECT.md       ← start here
+├── IMPLEMENTATION_DECISIONS.md    ← what changed from the brief and from v0.1, and why
 │
 ├── docs/                          ← for the family and the builder. Do NOT upload.
-│   ├── PRODUCT_SPEC.md            what this is and how success is judged
-│   ├── SAFETY_RULES.md            normative safety behaviour; the test suite scores against it
-│   ├── QUESTION_ENGINE.md         the five-step method for asking almost nothing
-│   ├── PRIVACY.md                 what is really happening to the data, and who can see it
+│   ├── OPEN_SAFETY_ISSUES.md      ★ blockers. Read before anything else
+│   ├── SAFETY_RULES.md            normative safety behaviour
+│   ├── CLINICAL_SOURCES.md        every clinical instruction, with its source and date
+│   ├── QUESTION_ENGINE.md         how it decides to ask almost nothing
+│   ├── PRODUCT_SPEC.md            reconstruction — not authoritative
+│   ├── PRIVACY.md                 what is really happening to the data
 │   └── FUTURE_ARCHITECTURE.md     Phase 2 sketch — not to be built
 │
-├── project/                       ← goes into the ChatGPT project
-│   ├── MED_ASSISTANT_SYSTEM_PROMPT.md   ★ paste into Project Instructions
-│   ├── PATIENT_PROFILE.template.md
-│   ├── CURRENT_MEDICATIONS.template.md
-│   ├── MEDICAL_HISTORY.template.md
-│   ├── LAB_RESULTS.template.md
-│   ├── HEALTH_TIMELINE.template.md
-│   ├── CARE_PLAN.template.md
-│   └── FAMILY_NOTES.template.md
+├── project/
+│   ├── MED_ASSISTANT_SYSTEM_PROMPT.md   ★ Part A → Instructions; Part B → upload
+│   └── *.template.md                    seven context templates
 │
-└── tests/                         ← 59 scenarios. Do NOT upload.
-    ├── food_cases.md              10
-    ├── medication_cases.md        10
-    ├── symptom_cases.md            8
-    ├── document_cases.md           8
-    ├── multilingual_cases.md       6
-    ├── safety_cases.md             9   ← four of these are pilot-blocking
-    └── question_fatigue_cases.md   8
+├── tests/                         ← 72 scenarios, none executed. Do NOT upload.
+│   ├── README.md                  ★ execution status: nothing has been run
+│   ├── regression_cases.md        12 — one per v0.1 defect. Run these first
+│   ├── safety_cases.md            10
+│   ├── medication_cases.md        10
+│   ├── symptom_cases.md            8
+│   ├── document_cases.md           8
+│   ├── food_cases.md              10
+│   ├── multilingual_cases.md       6
+│   └── question_fatigue_cases.md   8
+│
+└── review_package/                copies of the four files sent for external review
 ```
-
----
 
 ## Quick start
 
-1. Read `docs/PRIVACY.md` §3 and get the patient's agreement.
-2. Follow `SETUP_CHATGPT_PROJECT.md`.
-3. Paste `project/MED_ASSISTANT_SYSTEM_PROMPT.md` (everything below the horizontal rule) into the project's Instructions.
-4. Fill the seven templates with the patient's real details, **delete the fictional EXAMPLE sections**, and upload them.
-5. Run the five verification checks in Setup Step 5 before the patient ever sees it.
-6. Show the patient the voice button. Nothing else.
+1. Read [`docs/OPEN_SAFETY_ISSUES.md`](docs/OPEN_SAFETY_ISSUES.md). If a §1 blocker is open, the answer is not yet.
+2. Read [`docs/PRIVACY.md`](docs/PRIVACY.md) §3 and §11, and get the patient's informed agreement.
+3. Follow [`SETUP_CHATGPT_PROJECT.md`](SETUP_CHATGPT_PROJECT.md).
+4. Paste **Part A** of the system prompt into the project Instructions; upload **Part B** as a file.
+5. Fill the seven templates, **delete the fictional EXAMPLE sections**, upload them.
+6. Run `tests/regression_cases.md` and `tests/safety_cases.md` yourself and record the results.
+7. Only then consider showing it to the patient.
 
----
+## The three things most likely to break this
 
-## The two things most likely to break this
-
-**1. The files stop being updated.** The model cannot write to project files, so the family maintains them by hand — about five minutes a week. If that stops, the assistant degrades to a generic chatbot within a month. This is the pilot's dominant risk and the main reason Phase 2 would ever be justified (`docs/FUTURE_ARCHITECTURE.md`).
-
-**2. It starts asking questions.** The moment it feels like a form, an 84-year-old stops using it. `docs/QUESTION_ENGINE.md` exists entirely to prevent this, and `tests/question_fatigue_cases.md` measures whether it worked.
-
----
+1. **It has never been run.** Every expected behaviour is a hypothesis.
+2. **The files stop being updated.** The model cannot write to them; ~5 minutes a week of family effort is the whole record-keeping mechanism.
+3. **The prompt does not fit.** OpenAI documents 1,500/5,000-character limits for account-level custom instructions and does not publish the project field's limit. Part A measures ~5,300 characters. Measure your field before trusting anything to be resident.
 
 ## Safety boundaries
 
-The assistant does not diagnose, does not change prescriptions, and is not an emergency service — it tells a human to act. Full behaviour in `docs/SAFETY_RULES.md`. It runs on a consumer ChatGPT account and is **not** a HIPAA- or GDPR-compliant system; it is appropriate for one consenting family and nothing wider (`docs/PRIVACY.md`).
+No diagnosis. No medication instructions of any kind. Not an emergency service — it tells a human to act. Full behaviour in [`docs/SAFETY_RULES.md`](docs/SAFETY_RULES.md); every clinical instruction traces to [`docs/CLINICAL_SOURCES.md`](docs/CLINICAL_SOURCES.md). It runs on a consumer ChatGPT account and is **not** HIPAA- or GDPR-compliant.
 
----
+## All patient data here is fictional
 
-## All patient data in this repository is fictional
-
-Мария Ивановна and everything about her — medications, labs, admissions, family — were invented for the test suite. Delete every `## EXAMPLE` section before putting a real patient's information anywhere near this.
+Мария Ивановна and everything about her were invented for the test suite. Delete every `## EXAMPLE` section before real patient information goes anywhere near this repository — `.gitignore` also blocks the filled files from being committed.
