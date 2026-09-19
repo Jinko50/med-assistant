@@ -1,5 +1,7 @@
 # REVIEW PACKAGE — Med Assistant v0.3
 
+**Takeover note, 2026-09-19:** duplicated sources refreshed to the current working tree. Historical zero-execution statements below and in the clinician packet are superseded by the source execution log. Its final table has 20 PASS, 2 FAIL and 7 NOT RUN parent IDs. Refreshing files is not a new model test or clinical approval. The current prompt differs from the historically tested hash. See ../docs/CODEX_TAKEOVER_AUDIT.md.
+
 Refreshed **2026-09-19** after the second review round. All files are byte-identical copies of their sources in the repository.
 
 ## Contents

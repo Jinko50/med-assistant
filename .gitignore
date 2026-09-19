@@ -16,3 +16,22 @@ project/FAMILY_NOTES.md
 
 .DS_Store
 Thumbs.db
+
+# Standalone development: never commit secrets, uploads or private evidence.
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+dist/
+coverage/
+__pycache__/
+*.pyc
+uploads/
+private-data/
+private-evidence/
+*.log
+*.tsbuildinfo
+playwright-report/
+test-results/
+transfer-dist/

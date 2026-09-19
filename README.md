@@ -1,4 +1,21 @@
-# Med Assistant v0.3
+# Med Assistant — standalone development
+
+## Windows download — no developer tools required
+
+Get the ZIP from [Releases](https://github.com/Jinko50/med-assistant/releases), extract it,
+and open **Start Med Assistant.cmd**. [Windows instructions](docs/WINDOWS_DOWNLOAD.md).
+The first download is a **fictional, read-only preview**. Real shared records, login and
+medical chat are not enabled in it. The finished patient app is still in development.
+
+**Current status (2026-09-19): not ready for patient use.** The deliverable is now a standalone application. The ChatGPT Project material below is a preserved prototype and requirements source; its Phase 1 scope and zero-execution statements are historical, not current status.
+
+Start with [the takeover audit](docs/CODEX_TAKEOVER_AUDIT.md), [implementation plan](docs/STANDALONE_IMPLEMENTATION_PLAN.md), [readiness matrix](STANDALONE_READINESS.md) and [local development](docs/LOCAL_DEVELOPMENT.md). A Next.js app now runs locally with patient/caregiver fictional previews, three languages, server auth wiring and SQL record/access policies. Live Supabase authentication is not yet configured or verified. Medical chat remains disabled.
+
+To move development to Dad's computer, use [the transfer guide](docs/COMPUTER_TRANSFER.md) and [next-developer handoff](docs/NEXT_DEVELOPER_HANDOFF.md). Recommended development model: **GPT-6 Astra / High**, Extra High for safety/security reviews; [model guidance](docs/MODEL_GUIDANCE.md).
+
+79 parent scenarios exist. The historical run's final table has 20 passing, 2 failing and 7 unrun gating parent IDs; its original aggregate summary is inconsistent. No standalone model scenarios have run. See the audit for details.
+
+## Preserved prototype README (v0.3)
 
 A longitudinal health companion for one elderly patient and their family, running inside a **ChatGPT Shared Project**.
 

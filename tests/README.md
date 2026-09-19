@@ -1,6 +1,12 @@
 # TEST SUITE — STATUS
 
-## Execution status: NOTHING HAS BEEN RUN
+## Current takeover status — 2026-09-19
+
+The zero-execution section below is historical and superseded by this note. The preserved EXECUTION_LOG contains actual Project outputs: its final table counts 20 passing, 2 failing and 7 unrun parent gating IDs (22 executed), despite a summary claiming 23/21/6. No new model run has been performed. All 29 REG/SAFE parent IDs gate readiness, including all 34 subcases. Scenario result tables remain blank scoring templates, not current execution records.
+
+New executable unit tests live in tests/unit and run with `npm test`. They test pure access rules, scenario inventory and evidence validation, not model behavior or clinical safety. `npm run check:behavioral` fails without actual version-bound evidence. See docs/LOCAL_DEVELOPMENT.md and STANDALONE_READINESS.md.
+
+## Historical v0.3 execution status (superseded)
 
 **Every file in this directory contains written scenarios, not test results.**
 

@@ -1,0 +1,20 @@
+MED ASSISTANT — WINDOWS TEST PREVIEW
+
+1. Right-click the downloaded ZIP and select Extract All.
+2. Open the extracted folder.
+3. Double-click Start Med Assistant.cmd.
+4. Your browser opens the Russian patient view. EN and Hebrew are also available.
+
+No Node.js, Python, Git, Codex or package installation is required.
+Keep the app's small console window open while using it. Close it to stop.
+The app listens only on this computer and chooses a free port automatically.
+You can move the extracted folder or delete it when finished.
+
+This release contains FICTIONAL, READ-ONLY demonstration records.
+It is not the finished medical assistant. Real login, shared records and
+medical AI are not available in this download. Do not enter real patient data.
+The GitHub README tracks the remaining work toward the finished product.
+
+Windows 10/11 x64. Windows on ARM and macOS are not verified.
+This is unsigned software; Windows or your organization's policies may block it.
+If blocked, report the exact message rather than disabling security protection.

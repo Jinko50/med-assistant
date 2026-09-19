@@ -4,6 +4,36 @@ Unresolved items. **While anything in §1 is open, this must not be used with a 
 
 Last reviewed: 2026-09-19 (second review round, v0.3).
 
+## Standalone takeover classification — 2026-09-19
+
+**App milestone update:** apps/web now builds, renders EN/RU/HE patient/caregiver previews and contains Supabase auth/DAL wiring. Initial SQL RLS, source/record/revision/audit transactions are tested with PGlite. This mitigates parts of S-01/S-03 but does not close them: no live Supabase accounts or full authenticated HTTP verification. S-02, S-04–S-07 remain open. The transfer package preserves these limits; it is not a patient release. Authenticated history pagination, record pagination beyond 200 entries, recovery/MFA/access management and complete clinical schema remain unfinished. Model recommendation is in MODEL_GUIDANCE.md.
+
+The standalone mandate supersedes the old no-application scope, not the safety boundaries. Historical sections below remain preserved. B-03's historical aggregate is inconsistent: the log's final table contains 20 PASS, 2 FAIL and 7 NOT RUN parent IDs. No standalone model run exists. See CODEX_TAKEOVER_AUDIT.md and ../STANDALONE_READINESS.md.
+
+| IDs | Classification | Current closure evidence required |
+|---|---|---|
+| B-01, B-02, B-05, B-06, B-07 | controlled-pilot blocker | Signed clinician/pharmacist/local-protocol review and recorded plans |
+| B-03 | release blocker | Actual candidate-build behavioral outputs; all gating cases PASS; no PARTIAL |
+| B-04 | controlled-pilot blocker | Reconcile remaining reconstructed clinical/product ambiguities; standalone direction now explicit |
+| B-08 | controlled-pilot blocker if voice enabled | Drug/name/number/unit transcription and elderly usability tests |
+| B-09 / P-02 | external/platform limitation; prototype patient-use blocker | Project retrieval remains unreliable; standalone must replace it with tested backend retrieval |
+| P-01, P-03 | external/platform limitation | Retain prototype observations; no reliance in standalone |
+| P-04 | release blocker | Executed injection tests through retrieval, model and document workflow |
+| S-01 | release blocker | Authenticated app, persistent medical schema, server/RLS/storage authorization and revocation not implemented |
+| S-02 | release blocker | Deterministic medical engine and RU/HE/EN recognition missing; model-dependent residual risk remains |
+| S-03 | release blocker | Private ingestion, candidate review transaction, version/audit and original-source links missing |
+| S-04 | controlled-pilot blocker | Staging, outage handling, monitoring, DB/object restore and rollback not demonstrated |
+| S-05 | controlled-pilot blocker | Privacy/legal/consent/region/processor/retention assessment absent; no compliance claim |
+| S-06 | release blocker | Historical PASS scoring and conflicting medication/head-injury examples need review; do not loosen rules |
+| S-07 | release blocker | Evidence validator has no provider capture runner, authenticated provenance or deployment integration yet |
+| S-08 | post-pilot improvement | Optional PWA installation polish; offline medical data storage remains prohibited pending design |
+
+### B-09 Project file retrieval fails intermittently
+
+The execution log reports missing attached medication and care-plan content, including SAFE-01. P-02 remains open for the Project prototype. A database-backed standalone path must retrieve relevant confirmed facts with sources and distinguish dependency failure from unknown data. Adding a database design alone does not close this blocker for the new app.
+
+Milestone 1 mitigation: deny-by-default pure access contract, 79-case inventory, and a fail-closed structural evidence validator. These do not close S-01, S-02 or S-07. Draft emergency fallbacks remain NOT APPROVED and not in force.
+
 ---
 
 ## 1. Blockers — must be closed before any patient use
