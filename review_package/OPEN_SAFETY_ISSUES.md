@@ -17,8 +17,10 @@ No pharmacist has reviewed the medication boundaries, the missed-dose routing, t
 **To close:** a pharmacist reviews `SAFETY_RULES.md` §3 and Part A's medication block, in writing.
 
 ### B-03 Nothing has been executed
+**Status 2026-09-19: still open. 0 of 79 executed, 0 of 29 in the two gating files.** Execution is blocked because no configured project exists — see `../tests/EXECUTION_LOG.md` for the access determination and the exact steps required.
+
 All 79 scenarios in `/tests` are **written, not run**. No output of any model against this prompt has been observed. Every "expected behaviour" in the test files is a hypothesis.
-**To close:** execute at least `tests/regression_cases.md` and `tests/safety_cases.md` against the real project, record actual outputs, and fix what fails. See `tests/README.md`.
+**To close:** execute at least `../tests/regression_cases.md` and `../tests/safety_cases.md` against the real project, record actual outputs, and fix what fails. See `../tests/README.md`.
 
 ### B-04 Original specification never supplied
 The "Med Assistant v0.1 Product & Technical Specification" referenced in the original brief was never provided. `PRODUCT_SPEC.md` is a reconstruction from the brief's bullet points and may contradict the real specification on scope, intent or safety posture.
@@ -45,9 +47,10 @@ Voice is the intended primary channel for the patient. Mistranscribed drug names
 ## 2. Unverified platform assumptions
 
 ### P-01 Project Instructions capacity unknown — must be measured, never inferred
-OpenAI publishes limits for the *account-level custom instructions* field (1,500 Free/Go, 5,000 paid). **The project Instructions field is a different field with no published limit, and the two must not be treated as equivalent.** Part A grew in v0.3 (CPR correction, rescue carve-out, fallback) — run `tools/measure_prompt.py` for the current figure.
+OpenAI publishes limits for the *account-level custom instructions* field (1,500 Free/Go, 5,000 paid). **The project Instructions field is a different field with no published limit, and the two must not be treated as equivalent.** Part A grew in v0.3 (CPR correction, rescue carve-out, fallback) — run `../tools/measure_prompt.py` for the current figure.
 **Mitigation in place:** exactly one permitted reduction (the `LANGUAGE & SHAPE` paragraph). **`TIMING, NOT TIERS` is no longer droppable** — v0.2 listed it as the second drop, which would have removed how-soon guidance, and that was wrong. If Part A does not fit after the one permitted drop, the pilot does not run on that plan.
 **To close:** measure the real field empirically — paste, save, reopen, confirm the last line survives — and record the number here.
+**Status 2026-09-19: NOT VERIFIED.** No ChatGPT Project exists to paste into; no step of `../SETUP_CHATGPT_PROJECT.md` has been completed. Part A currently measures **6,483 characters** (A1 floor 4,707; only 348 of that is droppable) per `../tools/measure_prompt.py`. Whether that fits the project Instructions field is unknown and cannot be established from here. See `../tests/EXECUTION_LOG.md` for the access determination.
 
 ### P-02 File retrieval reliability unknown — CANNOT BE CLOSED BY TESTING
 Whether uploaded project files are consulted on every turn is not documented.

@@ -68,13 +68,13 @@ For each template in `/project`:
 
 | Template | Save as |
 |---|---|
-| `PATIENT_PROFILE.template.md` | `PATIENT_PROFILE.md` |
-| `CURRENT_MEDICATIONS.template.md` | `CURRENT_MEDICATIONS.md` |
-| `MEDICAL_HISTORY.template.md` | `MEDICAL_HISTORY.md` |
-| `LAB_RESULTS.template.md` | `LAB_RESULTS.md` |
-| `HEALTH_TIMELINE.template.md` | `HEALTH_TIMELINE.md` |
-| `CARE_PLAN.template.md` | `CARE_PLAN.md` |
-| `FAMILY_NOTES.template.md` | `FAMILY_NOTES.md` |
+| `project/PATIENT_PROFILE.template.md` | `PATIENT_PROFILE.md` |
+| `project/CURRENT_MEDICATIONS.template.md` | `CURRENT_MEDICATIONS.md` |
+| `project/MEDICAL_HISTORY.template.md` | `MEDICAL_HISTORY.md` |
+| `project/LAB_RESULTS.template.md` | `LAB_RESULTS.md` |
+| `project/HEALTH_TIMELINE.template.md` | `HEALTH_TIMELINE.md` |
+| `project/CARE_PLAN.template.md` | `CARE_PLAN.md` |
+| `project/FAMILY_NOTES.template.md` | `FAMILY_NOTES.md` |
 
 **Minimum viable set to start testing:** `PATIENT_PROFILE.md` (especially allergies and the emergency number) and `CURRENT_MEDICATIONS.md`. The other five can be filled in over the first week. But do not skip the emergency number — the assistant's red-flag responses depend on it.
 

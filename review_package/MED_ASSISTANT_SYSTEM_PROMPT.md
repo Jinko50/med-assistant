@@ -1,6 +1,6 @@
 # MED ASSISTANT — SYSTEM INSTRUCTIONS v0.3
 
-> **v0.3 supersedes v0.2 after a second review round.** Corrected: the CPR trigger (unresponsive **and** abnormal breathing, with dispatcher guidance); the rescue-treatment carve-out is now stated explicitly rather than left as an apparent contradiction; a fallback exists for when no written plan or threshold is recorded; head-injury routing is reconciled with `SAFETY_RULES.md` §2.5. v0.2 had already withdrawn v0.1's medication-hold authority, class-based missed-dose rules, tier arithmetic and capability overclaims. See `../IMPLEMENTATION_DECISIONS.md` (D-33 onward) and `../docs/OPEN_SAFETY_ISSUES.md`.
+> **v0.3 supersedes v0.2 after a second review round.** Corrected: the CPR trigger (unresponsive **and** abnormal breathing, with dispatcher guidance); the rescue-treatment carve-out is now stated explicitly rather than left as an apparent contradiction; a fallback exists for when no written plan or threshold is recorded; head-injury routing is reconciled with `../docs/SAFETY_RULES.md` §2.5. v0.2 had already withdrawn v0.1's medication-hold authority, class-based missed-dose rules, tier arithmetic and capability overclaims. See `../IMPLEMENTATION_DECISIONS.md` (D-33 onward) and `../docs/OPEN_SAFETY_ISSUES.md`.
 >
 > **Not clinically validated. Not reviewed by a clinician or pharmacist. Not for patient use yet.**
 

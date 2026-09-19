@@ -27,7 +27,7 @@ Wrote `docs/PRODUCT_SPEC.md` from the product rules in the build brief, with a p
 The brief referred to a specification "above" that did not reach me. Silently proceeding as though I had read it would have made every downstream document falsely authoritative.
 
 **IMPACT:**
-No functional impact. Reconcile against the original before treating `PRODUCT_SPEC.md` as the source of truth; the operational content (system prompt, question engine, safety rules) derives from the explicit rules in the brief and is unaffected either way.
+No functional impact. Reconcile against the original before treating `docs/PRODUCT_SPEC.md` as the source of truth; the operational content (system prompt, question engine, safety rules) derives from the explicit rules in the brief and is unaffected either way.
 
 ---
 
@@ -47,7 +47,7 @@ Safety: substantially better. UX: minor — markers appear only when the differe
 ## D-03 — Write-back blocks to work around an unwritable file system — *amended by D-25 (PENDING labelling), D-28*
 
 **DECISION:**
-The assistant emits `📋 ЗАПИСАТЬ В <FILE>` copy-paste blocks for facts with lasting value; the family pastes them in. Documented as the pilot's dominant operational risk in `SETUP_CHATGPT_PROJECT.md` and as the primary Phase 2 justification in `FUTURE_ARCHITECTURE.md`.
+The assistant emits `📋 ЗАПИСАТЬ В <FILE>` copy-paste blocks for facts with lasting value; the family pastes them in. Documented as the pilot's dominant operational risk in `SETUP_CHATGPT_PROJECT.md` and as the primary Phase 2 justification in `docs/FUTURE_ARCHITECTURE.md`.
 
 **REASON:**
 ChatGPT projects are read-only to the model. Longitudinal context was a core requirement, so the gap had to be bridged by a human process — and named honestly rather than hidden.
@@ -137,7 +137,7 @@ UX: substantially better for the actual channel. Testable.
 ## D-10 — Disclaimer suppression stated as a safety rule, not a style rule
 
 **DECISION:**
-Reflexive "consult your doctor" endings are prohibited and classified as a safety problem in `SAFETY_RULES.md` §6.
+Reflexive "consult your doctor" endings are prohibited and classified as a safety problem in `docs/SAFETY_RULES.md` §6.
 
 **REASON:**
 The brief asked to avoid them for UX reasons. The stronger argument is safety: an assistant that ends every message with a generic escalation teaches the patient to stop reading the end of messages — which is precisely where real escalations live.
@@ -189,7 +189,7 @@ Privacy and family trust. Cost: some candour is lost — correctly, since the al
 ## D-14 — Privacy document states the real risk ranking
 
 **DECISION:**
-`PRIVACY.md` names family over-access — an elderly person losing medical privacy from their own children — as the most likely harm, ahead of vendor processing and account compromise.
+`docs/PRIVACY.md` names family over-access — an elderly person losing medical privacy from their own children — as the most likely harm, ahead of vendor processing and account compromise.
 
 **REASON:**
 Consumer-LLM privacy documents habitually discuss the vendor and ignore the household. For this product the household is where the realistic harm sits.
@@ -228,7 +228,7 @@ Test coverage. All data is fictional, per the brief.
 ## D-17 — Success criteria include a stop condition
 
 **DECISION:**
-`PRODUCT_SPEC.md` §10 defines failure signals that should stop the pilot, including "the patient starts avoiding it".
+`docs/PRODUCT_SPEC.md` §10 defines failure signals that should stop the pilot, including "the patient starts avoiding it".
 
 **REASON:**
 A pilot with no stop condition becomes a project regardless of the result. The most valuable possible outcome of Phase 1 is learning that this patient does not want this — at a cost of documents rather than a product.
@@ -284,7 +284,7 @@ Functionality: the assistant answers fewer medication questions directly. Safety
 ## D-21 — Corrected the doubled-amlodipine example
 
 **DECISION:**
-`QUESTION_ENGINE.md` Example 2 and test `MED-02` now require prompt professional advice for any suspected extra dose, given **before** and **independent of** identifying which tablet it was. `REG-04` regression-tests it.
+`docs/QUESTION_ENGINE.md` Example 2 and test `MED-02` now require prompt professional advice for any suspected extra dose, given **before** and **independent of** identifying which tablet it was. `REG-04` regression-tests it.
 
 **REASON:**
 v0.1 called a doubled amlodipine "watchful waiting" and gated the advice on a question the patient often cannot answer. Both were wrong: the assistant cannot judge that home observation is sufficient, and making safety advice conditional on a forgotten detail delays it.
@@ -354,7 +354,7 @@ More work for the family, and more caveats in answers. Both are honest. `ASSUMED
 ## D-26 — Unknowns may never become assumptions
 
 **DECISION:**
-Deleted the `ASSUMED` provenance level. A missing safety-relevant fact stays `UNKNOWN`, is named as unknown, and the advice becomes "get this settled by X" rather than a guess with a hedge attached. `QUESTION_ENGINE.md` Step 5 was rewritten accordingly.
+Deleted the `ASSUMED` provenance level. A missing safety-relevant fact stays `UNKNOWN`, is named as unknown, and the advice becomes "get this settled by X" rather than a guess with a hedge attached. `docs/QUESTION_ENGINE.md` Step 5 was rewritten accordingly.
 
 **REASON:**
 v0.1 instructed the assistant to answer "stated on an assumption" and to take "the safest reasonable assumption" when a question was skipped. For safety-relevant facts that is a guess wearing a label, and labelled guesses get acted on.
@@ -367,7 +367,7 @@ Some answers become less complete and more obviously conditional. That is the in
 ## D-27 — Unified question budgets
 
 **DECISION:**
-One budget, stated identically in Part A, `QUESTION_ENGINE.md` and `SAFETY_RULES.md`: routine 0–1; caregiver review up to 3, batched and optional; a clarification genuinely needed for safety overrides the routine limit but never delays emergency action; emergencies allow none.
+One budget, stated identically in Part A, `docs/QUESTION_ENGINE.md` and `docs/SAFETY_RULES.md`: routine 0–1; caregiver review up to 3, batched and optional; a clarification genuinely needed for safety overrides the routine limit but never delays emergency action; emergencies allow none.
 
 **REASON:**
 v0.1's three documents disagreed — the prompt said 0–1 routinely, the question engine had a five-row table with tier-specific allowances, and the safety rules implied more. Divergent copies of a rule mean the rule is unenforceable.
@@ -380,7 +380,7 @@ The safety override is explicit rather than implied, with a stated anti-loophole
 ## D-28 — Removed capability claims the platform does not support
 
 **DECISION:**
-Removed every implication of memory, saving, logging, monitoring, family notification or exhaustive interaction checking, and added an explicit capability table to `SAFETY_RULES.md` §6 plus a "What it cannot do" section in the README. Regression case `REG-09`, plus `SAFE-10`.
+Removed every implication of memory, saving, logging, monitoring, family notification or exhaustive interaction checking, and added an explicit capability table to `docs/SAFETY_RULES.md` §6 plus a "What it cannot do" section in the README. Regression case `REG-09`, plus `SAFE-10`.
 
 **REASON:**
 v0.1 said things like "I'll remember", offered write-back blocks that read as records, and claimed interaction checks against "the full current list". Shared projects use project-only memory and recall is not a record; the model cannot write files or notify anyone; no interaction check is exhaustive.
@@ -462,7 +462,7 @@ Corrects the most dangerous single line in v0.2. Part A grew; see D-38.
 ## D-34 — Rescue-treatment carve-out stated explicitly
 
 **DECISION:**
-A named carve-out in Part A and `SAFETY_RULES.md` §3.2a: in an acute emergency only, the assistant may say to use the patient's **own prescribed** rescue product exactly as its label and their own written plan direct. Never a dose figure, never a choice between products, never a repeat decision, never someone else's device, never outside an emergency.
+A named carve-out in Part A and `docs/SAFETY_RULES.md` §3.2a: in an acute emergency only, the assistant may say to use the patient's **own prescribed** rescue product exactly as its label and their own written plan direct. Never a dose figure, never a choice between products, never a repeat decision, never someone else's device, never outside an emergency.
 
 **REASON:**
 v0.2 held an absolute prohibition on medication instructions alongside instructions to use an auto-injector. Both were right; the relationship between them was never written down, leaving a reader — or the model — to resolve an apparent contradiction on its own.
@@ -475,7 +475,7 @@ The boundary is now inspectable and reviewable. Justification recorded: the pres
 ## D-35 — Fallback pathways for missing plans and thresholds
 
 **DECISION:**
-A conservative fallback is in force now (`SAFETY_RULES.md` §2.6): say nothing is recorded, invent nothing, route to the dispatcher in an emergency or to the clinic for a reading, and ask for a threshold to be written down. Longer draft pathways — anaphylaxis with no device, hypoglycaemia with no plan, a reading with no threshold, out-of-hours, and a medication question with no pharmacy open — are written in `docs/EMERGENCY_FALLBACKS.md`, explicitly **not approved and not in force**, with a sign-off sheet.
+A conservative fallback is in force now (`docs/SAFETY_RULES.md` §2.6): say nothing is recorded, invent nothing, route to the dispatcher in an emergency or to the clinic for a reading, and ask for a threshold to be written down. Longer draft pathways — anaphylaxis with no device, hypoglycaemia with no plan, a reading with no threshold, out-of-hours, and a medication question with no pharmacy open — are written in `docs/EMERGENCY_FALLBACKS.md`, explicitly **not approved and not in force**, with a sign-off sheet.
 
 **REASON:**
 v0.2 routed emergencies to "their own plan" and readings to a recorded threshold. Most elderly patients have neither, so the assistant routed to nothing at exactly the moment a usable instruction was needed.
@@ -488,7 +488,7 @@ Closes the gap without the assistant inventing clinical content. §4.5 of the fa
 ## D-36 — Head-injury routing reconciled, and deliberately broader than NG232
 
 **DECISION:**
-One rule in both documents: any head injury on **any** anticoagulant or antiplatelet, **aspirin included**, means emergency services. `SAFETY_RULES.md` §2.5 now explains why this is broader than NG232 and flags it as blocker **B-07** for a clinician to confirm or narrow. Regression `REG-19`.
+One rule in both documents: any head injury on **any** anticoagulant or antiplatelet, **aspirin included**, means emergency services. `docs/SAFETY_RULES.md` §2.5 now explains why this is broader than NG232 and flags it as blocker **B-07** for a clinician to confirm or narrow. Regression `REG-19`.
 
 **REASON:**
 v0.2's resident prompt included aspirin; §2.5 reproduced NG232's aspirin-monotherapy exclusion. Two instructions for the same event. Reconciled toward the broader rule because NG232 governs the imaging decision rather than the attendance decision, and because the assistant cannot establish monotherapy from a record whose accuracy §3.6 exists to doubt.
