@@ -1,0 +1,18 @@
+# Real patient data must never be committed.
+# Fill the templates and keep the filled copies out of the repo.
+project/PATIENT_PROFILE.md
+project/CURRENT_MEDICATIONS.md
+project/MEDICAL_HISTORY.md
+project/LAB_RESULTS.md
+project/HEALTH_TIMELINE.md
+project/CARE_PLAN.md
+project/FAMILY_NOTES.md
+
+# Photos of documents
+*.jpg
+*.jpeg
+*.png
+*.pdf
+
+.DS_Store
+Thumbs.db
