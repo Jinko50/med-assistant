@@ -1,6 +1,6 @@
 # Standalone readiness — 2026-09-19
 
-**NOT READY for patient use or a controlled pilot.** A Next.js app now builds and runs locally. PASS applies only to the stated narrow requirement. Live Supabase accounts remain unconfigured; historical Project responses are not standalone model results. See docs/APP_MILESTONE_VERIFICATION.md and docs/COMPUTER_TRANSFER.md.
+**NOT READY for patient use or a controlled pilot.** A Next.js app now builds and runs locally. PASS applies only to the stated narrow requirement. The hosted Supabase schema is deployed and anonymous read denial passes; patient/caregiver accounts and live authenticated testing remain pending. Historical Project responses are not standalone model results. See docs/LIVE_BACKEND_VERIFICATION.md, docs/APP_MILESTONE_VERIFICATION.md and docs/COMPUTER_TRANSFER.md.
 
 | Requirement | Implementation location | Verification / evidence | Status | Remaining issue |
 |---|---|---|---|---|

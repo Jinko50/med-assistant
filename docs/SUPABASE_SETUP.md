@@ -1,6 +1,6 @@
 # Configure the synthetic app backend
 
-This enables real login and record persistence for development. No Supabase instance or accounts were created on the source computer. Database policies were exercised with PGlite PostgreSQL and an auth.uid test shim; actual Supabase Auth and HTTP integration still need verification.
+This enables real login and record persistence for development. The user-provided hosted project now has schema version 1 deployed and anonymous read denial verified. Accounts and authenticated two-user verification remain pending. See [live backend verification](LIVE_BACKEND_VERIFICATION.md). Do not reapply the initial migration to the configured project.
 
 1. Create a separate Supabase development project containing fictional data only. Choose the region deliberately. Keep database/admin credentials in your password manager.
 2. In the SQL editor apply database/migrations/001_record_foundation.sql in full. It is an initial transactional migration for a new project. It must fail on an already migrated schema; do not delete tables to make it run again. Inspect schema_versions for version 1.
