@@ -13,9 +13,18 @@ Every clinical instruction that appears in `SAFETY_RULES.md` or in Part A of the
 **Resuscitation Council UK — Adult Basic Life Support, 2025 Guidelines**
 https://www.resus.org.uk/professional-library/2025-resuscitation-guidelines/adult-basic-life-support-guidelines
 
-Used for: the unresponsive / not-breathing-normally actions.
+Used for: the unresponsive and cardiac-arrest actions.
 
-Key points relied on: call emergency services straight away for any unresponsive person, then assess breathing while waiting for the call to be answered; untrained rescuers give continuous chest compressions, trained rescuers alternate 30 compressions with 2 rescue breaths; anyone may use an AED and no training is needed. Became the UK first-aid training standard in January 2026.
+Key points relied on, quoted from the guideline:
+
+- **"If any person is unresponsive with abnormal breathing, cardiac arrest should be assumed."** Both conditions are required. "Not breathing normally" on its own is **not** the criterion.
+- **"Slow, laboured breathing, as well as other abnormal patterns such as agonal gasping or panting, must be recognised as signs of cardiac arrest."**
+- Call first, then assess: **"Call 999 without delay. Assess breathing while you wait for the call to be answered."** And: **"If you have a mobile phone, activate the speaker function and call 999 without delay."**
+- The dispatcher is part of the pathway: call handlers **"provide CPR instructions to all callers"**, assume the caller cannot perform CPR, and give chest-compression-only instructions; **"the ambulance service call handler will assist you"** if the caller is unsure whether breathing is normal.
+- Untrained rescuers give continuous chest compressions; trained rescuers alternate 30 compressions with 2 rescue breaths. Anyone may use an AED; no training is needed.
+- Became the UK first-aid training standard in January 2026.
+
+**Not covered by this guideline:** management of a person who is unresponsive but breathing normally. The 2025 BLS document addresses cardiac-arrest recognition and response. The side-positioning instruction used in `SAFETY_RULES.md` is general first-aid practice, not a quotation from this source, and is flagged for clinician confirmation.
 
 **Note on jurisdiction:** UK guidance. The pilot patient in the test material is in Israel. Resuscitation guidance is broadly harmonised through ILCOR, but the **emergency number, the local ambulance service's own pre-arrival instructions, and any national variation must be confirmed locally** and recorded in `PATIENT_PROFILE.md`. Emergency dispatchers give live instructions; those override anything written here.
 
@@ -74,6 +83,8 @@ Key points relied on: the **patient information leaflet for the specific product
 https://help.openai.com/en/articles/8096356-chatgpt-custom-instructions
 Character limits: 1,500 (Free/Go), 5,000 (Plus/Pro/Business/Enterprise/Edu), as reported 2026-09-19.
 
+**This is the account-level Custom Instructions field, NOT the project Instructions field.** These figures must not be used to infer the project field capacity; see the note below.
+
 **Projects in ChatGPT — OpenAI Help Center**
 https://help.openai.com/en/articles/10169521-projects-in-chatgpt
 *(Direct fetch returned HTTP 403 on 2026-09-19; the points below come from the indexed summary of that page and should be re-verified in a browser.)*
@@ -81,7 +92,7 @@ https://help.openai.com/en/articles/10169521-projects-in-chatgpt
 Relied on for: projects hold chats, files and instructions together; **shared projects are automatically set to project-only memory and cannot be switched to default memory**; with project-only memory chats can reference other conversations in the same project but not outside it; sharing offers two access levels, **chat** (see and use chats, files, instructions) and **edit** (also update instructions, upload or remove files, invite others); availability is subject to plan and workspace settings.
 
 **Not established from OpenAI documentation, and therefore treated as unknown:**
-- the character limit of the **project Instructions** field specifically;
+- the character limit of the **project Instructions** field specifically — it is a different field from account-level Custom Instructions, and its capacity must be measured empirically rather than inferred;
 - whether uploaded project files are reliably retrieved on every turn;
 - whether project memory recalls earlier chats deterministically.
 

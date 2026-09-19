@@ -6,11 +6,18 @@
 
 | | Count | Status |
 |---|---|---|
-| Scenarios written | 72 | — |
-| Scenarios executed against a model | **0** | Never run |
+| Scenarios **written** | 79 | design fixtures |
+| Scenarios **executed** against a model | **0** | never run |
 | Outputs observed | **0** | — |
-| Failures found | unknown | Cannot be known until executed |
-| Clinical review of expectations | **none** | Blocker `B-01` / `B-02` |
+| Failures found | unknown | cannot be known until executed |
+| Clinical review of expectations | **none** | blockers `B-01` / `B-02` |
+
+**Written ≠ executed.** These are two different things and are tracked in two different places:
+
+- **This directory** holds *written scenarios* — what the design predicts should happen.
+- **`EXECUTION_LOG.md`** holds *actual runs* — what a model actually produced, with the output preserved. It is currently empty, because nothing has been run.
+
+Never report a scenario count as evidence of testing.
 
 Every "Expected" line in these files is a **hypothesis about what the prompt should produce**. None has been confirmed. Some are probably wrong, and the ones that are wrong will not be visible until the scenarios are run.
 
@@ -20,19 +27,13 @@ Every "Expected" line in these files is a **hypothesis about what the prompt sho
 
 A pass criterion describes what a reviewer should look for. It does not mean anything passed. Until a scenario has been executed and its actual output recorded, its status is `NOT RUN`.
 
-When you execute a scenario, record it here:
-
-| ID | Date run | Model / plan | Actual behaviour | Verdict |
-|---|---|---|---|---|
-| | | | | |
-
-Keep the actual output, not a summary of it. A scenario whose output was not preserved has not been tested.
+When you execute a scenario, record it in **`EXECUTION_LOG.md`**, not here. Keep the verbatim output, not a summary — a scenario whose output was not preserved has not been tested.
 
 ## Files
 
 | File | Scenarios | Purpose |
 |---|---|---|
-| `regression_cases.md` | 12 | **Run these first.** One per defect found in the v0.2 safety review |
+| `regression_cases.md` | 19 | **Run these first.** One per defect found in review: REG-01–12 from v0.1, REG-13–19 from v0.2 |
 | `safety_cases.md` | 10 | Core safety behaviour |
 | `medication_cases.md` | 10 | Medication boundaries and routing |
 | `symptom_cases.md` | 8 | Emergency recognition and timing |

@@ -1,13 +1,13 @@
-# Med Assistant v0.2
+# Med Assistant v0.3
 
 A longitudinal health companion for one elderly patient and their family, running inside a **ChatGPT Shared Project**.
 
 > ## ⚠ Not ready for patient use
 >
-> v0.2 incorporates a safety review that found real defects in v0.1. Those are fixed in the documents — but:
+> v0.3 incorporates a second review round; v0.2 incorporated the first. Both found real defects, and both sets are fixed in the documents — but:
 >
 > - **No clinician has reviewed this.** No pharmacist has reviewed this.
-> - **Nothing has been executed.** All 72 test scenarios are written, none has been run against a model.
+> - **Nothing has been executed.** All 79 test scenarios are written, none has been run against a model.
 > - **No clinical validation is claimed**, and none exists.
 > - The original product specification referenced in the brief was never supplied, so `docs/PRODUCT_SPEC.md` is a reconstruction and is not authoritative.
 >
@@ -19,7 +19,7 @@ A longitudinal health companion for one elderly patient and their family, runnin
 
 ## What this is
 
-A system prompt, seven patient-context templates, and a 72-scenario test suite.
+A system prompt, seven patient-context templates, and a 79-scenario test suite.
 
 The assistant it is intended to produce:
 
@@ -55,6 +55,7 @@ med-assistant/
 │
 ├── docs/                          ← for the family and the builder. Do NOT upload.
 │   ├── OPEN_SAFETY_ISSUES.md      ★ blockers. Read before anything else
+│   ├── EMERGENCY_FALLBACKS.md     draft pathways awaiting clinician sign-off
 │   ├── SAFETY_RULES.md            normative safety behaviour
 │   ├── CLINICAL_SOURCES.md        every clinical instruction, with its source and date
 │   ├── QUESTION_ENGINE.md         how it decides to ask almost nothing
@@ -62,13 +63,17 @@ med-assistant/
 │   ├── PRIVACY.md                 what is really happening to the data
 │   └── FUTURE_ARCHITECTURE.md     Phase 2 sketch — not to be built
 │
+├── tools/
+│   └── measure_prompt.py          prints Part A / Part B sizes
+│
 ├── project/
 │   ├── MED_ASSISTANT_SYSTEM_PROMPT.md   ★ Part A → Instructions; Part B → upload
 │   └── *.template.md                    seven context templates
 │
-├── tests/                         ← 72 scenarios, none executed. Do NOT upload.
+├── tests/                         ← 79 scenarios, none executed. Do NOT upload.
 │   ├── README.md                  ★ execution status: nothing has been run
-│   ├── regression_cases.md        12 — one per v0.1 defect. Run these first
+│   ├── EXECUTION_LOG.md          ★ actual runs. Currently empty
+│   ├── regression_cases.md        19 — one per defect found in review. Run first
 │   ├── safety_cases.md            10
 │   ├── medication_cases.md        10
 │   ├── symptom_cases.md            8
@@ -94,7 +99,7 @@ med-assistant/
 
 1. **It has never been run.** Every expected behaviour is a hypothesis.
 2. **The files stop being updated.** The model cannot write to them; ~5 minutes a week of family effort is the whole record-keeping mechanism.
-3. **The prompt does not fit.** OpenAI documents 1,500/5,000-character limits for account-level custom instructions and does not publish the project field's limit. Part A measures ~5,300 characters. Measure your field before trusting anything to be resident.
+3. **The prompt does not fit.** The project Instructions field's capacity is **not published** and must be measured, not inferred from the account-level Custom Instructions limits — they are different fields. Run `python tools/measure_prompt.py` for Part A's current size, then measure the field itself (`SETUP_CHATGPT_PROJECT.md` Step 2). Only the `LANGUAGE & SHAPE` paragraph may be dropped; timing guidance may not.
 
 ## Safety boundaries
 

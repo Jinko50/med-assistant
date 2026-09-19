@@ -122,7 +122,7 @@ These test the thing most likely to kill the product in real use: the assistant 
 
 ## Aggregate metric
 
-Across all 72 scenarios in `/tests`, count total follow-up questions asked of the **patient**, excluding questions that are genuinely safety clarifications under the unified budget (`../docs/QUESTION_ENGINE.md` §0).
+Across all 79 scenarios in `/tests`, count total follow-up questions asked of the **patient**, excluding questions that are genuinely safety clarifications under the unified budget (`../docs/QUESTION_ENGINE.md` §0).
 
 | Result | Interpretation |
 |---|---|

@@ -1,8 +1,8 @@
-# MED ASSISTANT v0.2 — PRODUCT SPECIFICATION
+# MED ASSISTANT v0.3 — PRODUCT SPECIFICATION
 
 > **UNRESOLVED — the original specification was never supplied.** The "Med Assistant v0.1 Product & Technical Specification" referenced in the brief did not reach the implementer. This document is a **reconstruction** from the brief's bullet points and may contradict the real specification on scope, intent or safety posture. It is **not authoritative**. See `OPEN_SAFETY_ISSUES.md` B-04.
 >
-> **v0.2** incorporates a safety review. Nothing here has been reviewed by a clinician or pharmacist, and no part of the system has been executed or tested. No claim of clinical validation is made.
+> **v0.3** incorporates two rounds of safety review. Nothing here has been reviewed by a clinician or pharmacist, and no part of the system has been executed or tested. No claim of clinical validation is made.
 
 ---
 

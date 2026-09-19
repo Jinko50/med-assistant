@@ -3,7 +3,9 @@
 Every material adjustment made to the specification during implementation. Core product intent is unchanged throughout.
 
 **D-01 … D-18** were taken while building v0.1.
-**D-19 … D-31** were taken in response to the v0.2 safety review; several of them reverse a v0.1 decision. Where a v0.1 decision was withdrawn, it is marked **WITHDRAWN** in place rather than deleted, so the record of what was once shipped stays visible.
+**D-19 … D-32** were taken in response to the first safety review (v0.2).
+**D-33 … D-39** were taken in response to the second review round (v0.3), and two of them correct v0.2's own corrections.
+Where a decision was withdrawn it is marked **WITHDRAWN** in place rather than deleted, so the record of what was once shipped stays visible.
 
 > ## Unresolved
 >
@@ -292,10 +294,10 @@ Removes a worked example that taught the wrong pattern in the document most like
 
 ---
 
-## D-22 — Replaced generic emergency actions with sourced, condition-specific ones
+## D-22 — Replaced generic emergency actions with sourced, condition-specific ones — *CPR trigger corrected by D-33*
 
 **DECISION:**
-Part A now carries named actions for: not breathing normally; unresponsive but breathing; suspected anaphylaxis; low blood sugar (able and unable to swallow); suspected stroke or head injury. Each traces to a source in `docs/CLINICAL_SOURCES.md` with a retrieval date. Rescue medicines are limited to the patient's own prescribed product, used per its own instructions, with no dose supplied by the assistant.
+Part A now carries named actions for: unresponsive; unresponsive but breathing normally; suspected anaphylaxis; low blood sugar (able and unable to swallow); suspected stroke or head injury. Each traces to a source in `docs/CLINICAL_SOURCES.md` with a retrieval date. Rescue medicines are limited to the patient's own prescribed product, used per its own instructions, with no dose supplied by the assistant.
 
 **REASON:**
 v0.1 said "one safe action while waiting" and left the content to the model. Hypoglycaemia, anaphylaxis and unresponsiveness were absent entirely — the three situations where a bystander's first minutes matter most.
@@ -437,3 +439,98 @@ v0.1's scoring tables read as though results existed. They did not, and they sti
 
 **IMPACT:**
 No claim of clinical validation is made anywhere. `B-03` stays open until the scenarios are run and their actual outputs recorded.
+
+---
+
+# v0.3 — SECOND REVIEW ROUND
+
+---
+
+## D-33 — CPR trigger corrected to unresponsive AND abnormal breathing
+
+**DECISION:**
+"Not breathing normally" is no longer a standalone trigger for chest compressions. The criterion is **unresponsive AND breathing absent or abnormal**, with agonal gasping, panting and slow or laboured breathing named explicitly as signs of arrest. Call first, assess breathing while the call connects, phone on speaker, dispatcher gives CPR instructions and helps decide whether breathing is normal. Regression `REG-13`, two inputs.
+
+**REASON:**
+RCUK 2025 states *"If any person is unresponsive with abnormal breathing, cardiac arrest should be assumed"* — both conditions. v0.2's wording would have supported telling a bystander to start compressions on a conscious person with laboured breathing, which is a serious harm. v0.2 also omitted the dispatcher, who is the actual source of CPR instruction in a real call.
+
+**IMPACT:**
+Corrects the most dangerous single line in v0.2. Part A grew; see D-38.
+
+---
+
+## D-34 — Rescue-treatment carve-out stated explicitly
+
+**DECISION:**
+A named carve-out in Part A and `SAFETY_RULES.md` §3.2a: in an acute emergency only, the assistant may say to use the patient's **own prescribed** rescue product exactly as its label and their own written plan direct. Never a dose figure, never a choice between products, never a repeat decision, never someone else's device, never outside an emergency.
+
+**REASON:**
+v0.2 held an absolute prohibition on medication instructions alongside instructions to use an auto-injector. Both were right; the relationship between them was never written down, leaving a reader — or the model — to resolve an apparent contradiction on its own.
+
+**IMPACT:**
+The boundary is now inspectable and reviewable. Justification recorded: the prescriber already made this decision in advance and in writing; the assistant points at it rather than authoring it.
+
+---
+
+## D-35 — Fallback pathways for missing plans and thresholds
+
+**DECISION:**
+A conservative fallback is in force now (`SAFETY_RULES.md` §2.6): say nothing is recorded, invent nothing, route to the dispatcher in an emergency or to the clinic for a reading, and ask for a threshold to be written down. Longer draft pathways — anaphylaxis with no device, hypoglycaemia with no plan, a reading with no threshold, out-of-hours, and a medication question with no pharmacy open — are written in `docs/EMERGENCY_FALLBACKS.md`, explicitly **not approved and not in force**, with a sign-off sheet.
+
+**REASON:**
+v0.2 routed emergencies to "their own plan" and readings to a recorded threshold. Most elderly patients have neither, so the assistant routed to nothing at exactly the moment a usable instruction was needed.
+
+**IMPACT:**
+Closes the gap without the assistant inventing clinical content. §4.5 of the fallback document carries the open question the reviewer raised about the blanket missed-dose prohibition out of hours.
+
+---
+
+## D-36 — Head-injury routing reconciled, and deliberately broader than NG232
+
+**DECISION:**
+One rule in both documents: any head injury on **any** anticoagulant or antiplatelet, **aspirin included**, means emergency services. `SAFETY_RULES.md` §2.5 now explains why this is broader than NG232 and flags it as blocker **B-07** for a clinician to confirm or narrow. Regression `REG-19`.
+
+**REASON:**
+v0.2's resident prompt included aspirin; §2.5 reproduced NG232's aspirin-monotherapy exclusion. Two instructions for the same event. Reconciled toward the broader rule because NG232 governs the imaging decision rather than the attendance decision, and because the assistant cannot establish monotherapy from a record whose accuracy §3.6 exists to doubt.
+
+**IMPACT:**
+Over-escalates some aspirin-only patients. Stated openly as a non-clinician's conservative choice, and put in front of a clinician rather than settled quietly.
+
+---
+
+## D-37 — Question rules: reconfirmation allowed, routine-only stop, PENDING open items
+
+**DECISION:**
+Three corrections. (a) Safety-critical **reconfirmation** of a stale, disputed or otherwise uncertain recorded fact is permitted, with a three-part test. (b) The "stop after three ignored questions" rule now governs **routine** questions only; safety-critical questions continue, with their reason given. (c) Open items are **PENDING** until a person saves them, and family availability is never assumed — where something is safety-critical the assistant routes to a service that answers, not to an absent relative. Regressions `REG-15`, `REG-16`, `REG-17`.
+
+**REASON:**
+v0.2's anti-nagging rules were written against the wrong failure mode. Forbidding reconfirmation treats the file as current by definition — the opposite of D-25's own freshness rule. Stopping all questions after three non-answers lets a patient's disengagement silence a safety check. And "open items are recorded in `CARE_PLAN.md`" was a capability claim of exactly the kind D-28 removed everywhere else.
+
+**IMPACT:**
+Restores necessary questioning without reopening the intake-form failure mode: the exception requires the fact to be load-bearing *today*.
+
+---
+
+## D-38 — Timing is no longer droppable; the field must be measured
+
+**DECISION:**
+`TIMING, NOT TIERS` is reclassified as safety content and may never be dropped. The only permitted reduction is the `LANGUAGE & SHAPE` paragraph; if Part A still does not fit, the pilot does not run on that plan. Added `tools/measure_prompt.py`. The setup guide now requires **empirical measurement** of the project Instructions field — paste, save, reopen, confirm the last line survives — and states that the account-level Custom Instructions limits must not be used to infer it.
+
+**REASON:**
+D-24 listed timing as the second thing to drop. That was wrong: without it the assistant says what is wrong but not how soon to act, which is the part the reader acts on. Separately, v0.2 treated 5,000 characters as a working assumption derived from a different field; that inference was never sound in either direction.
+
+**IMPACT:**
+Part A grew in v0.3 and has less headroom. That tension is real and is resolved in favour of keeping safety content, with "do not run on that plan" as the honest outcome if it does not fit.
+
+---
+
+## D-39 — Retrieval and memory limitations cannot be closed by testing; voice is a prerequisite
+
+**DECISION:**
+`P-02` (file retrieval) and `P-03` (project memory) are marked **permanently open** — a passing test shows a behaviour is possible, not reliable. Voice transcription was promoted from an accepted limitation to blocker **B-08**, conditional on voice being used at all.
+
+**REASON:**
+v0.2 gave both P-02 and P-03 a "to close: test it" line, which would have let a single successful trial retire a limitation the platform does not guarantee. And voice is the intended primary channel for this patient: an untested transcription path for drug names and numbers is not an accepted limitation, it is an untested safety surface on the main route in.
+
+**IMPACT:**
+The design keeps assuming retrieval and recall may fail on any turn. If voice is not tested, voice is not used.
