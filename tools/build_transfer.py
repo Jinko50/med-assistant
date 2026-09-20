@@ -10,10 +10,10 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'transfer-dist'
-DIRECTORIES = {'apps', 'packages', 'database', 'desktop', 'docs', 'project', 'tests', 'tools', 'scripts', 'transfer', 'review_package', '.github'}
+DIRECTORIES = {'apps', 'packages', 'database', 'desktop', 'site', 'docs', 'project', 'tests', 'tools', 'scripts', 'transfer', 'review_package', '.github'}
 SKIP = {'node_modules', '.next', '.git', '__pycache__', 'test-results', 'playwright-report', 'private-data', 'private-evidence', 'uploads'}
 ROOT_FILES = {'AGENTS.md', 'README.md', 'STANDALONE_READINESS.md', 'IMPLEMENTATION_DECISIONS.md', 'SETUP_CHATGPT_PROJECT.md', '.gitignore', 'package.json', 'package-lock.json', 'playwright.config.ts'}
-EXTENSIONS = {'.md', '.ts', '.tsx', '.css', '.json', '.sql', '.py', '.ps1', '.sh', '.yml', '.yaml', '.cjs', '.mjs', '.cmd', '.txt'}
+EXTENSIONS = {'.md', '.ts', '.tsx', '.css', '.json', '.sql', '.py', '.ps1', '.sh', '.yml', '.yaml', '.cjs', '.mjs', '.cmd', '.txt', '.html', '.js'}
 SECRET = re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|\bAKIA[0-9A-Z]{16}\b|\bgh[pousr]_[A-Za-z0-9]{30,}\b|\bsk-[A-Za-z0-9_-]{32,}\b')
 
 def git(*args):

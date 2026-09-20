@@ -1,5 +1,28 @@
 # Hosted backend setup — 2026-09-19
 
+## 2026-09-20 update
+
+Both user-requested accounts now have confirmed email identities, application administrator
+roles and caregiver/editor memberships in one shared record. Their personal identifiers
+are kept out of Git. Passwords were not changed. The app registration minimum is six,
+matching the hosted provider minimum. The saved Site URL points to the deployed GitHub
+Pages confirmation landing page; HTTP 200 and persistence after dashboard reload were verified.
+
+Migration 003 was applied through the dashboard. Verification returned schema version 3,
+private bucket `medical-originals`, 10 MiB limit and two storage policies. The app supports
+private original uploads/downloads; no extraction or medical interpretation. Three PGlite
+document tests cover unauthorized reservation, storage path restrictions, pending files,
+idempotent finalization, overwrite/delete denial and revocation. Total: 19 SQL tests and
+16 unit tests passed. PGlite uses a simulated Storage schema and does not replace a live
+Storage API upload test. Live two-account login/save/upload and recovery tests remain pending.
+The production build, TypeScript check, 10 desktop/mobile browser tests and 52 static checks
+passed. The new connected ZIP was extracted and passed its bundled-runtime smoke test,
+including the six-character form minimum and anonymous document/admin denial. The live
+API denies anonymous reads of all 11 application tables, including document metadata.
+
+The sections below are historical milestone evidence; initial empty-account requirements
+have been superseded by this update. Migrations 001–003 are not registered in CLI history.
+
 ## Fixed-account milestone
 
 Migration 002 is now deployed. The three added tables (`app_admins`, `managed_accounts`,

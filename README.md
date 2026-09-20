@@ -5,13 +5,13 @@
 Get the ZIP from [Releases](https://github.com/Jinko50/med-assistant/releases), extract it,
 and open **Start Med Assistant.cmd**. [Windows instructions](docs/WINDOWS_DOWNLOAD.md).
 The original download is a fictional, read-only preview. The connected account-testing
-release adds registration, shared records and an admin portal with approved email roles.
+release adds registration, shared records, private document uploads and an admin portal with approved email roles.
 Follow [installation and administration](docs/INSTALL_AND_ADMIN.md). Account setup and
 live acceptance tests remain required; medical chat is unavailable.
 
 **Current status (2026-09-19): not ready for patient use.** The deliverable is now a standalone application. The ChatGPT Project material below is a preserved prototype and requirements source; its Phase 1 scope and zero-execution statements are historical, not current status.
 
-Start with [the takeover audit](docs/CODEX_TAKEOVER_AUDIT.md), [implementation plan](docs/STANDALONE_IMPLEMENTATION_PLAN.md), [readiness matrix](STANDALONE_READINESS.md) and [local development](docs/LOCAL_DEVELOPMENT.md). A Next.js app now runs locally with patient/caregiver fictional previews, three languages, server auth wiring and SQL record/access policies. Live Supabase authentication is not yet configured or verified. Medical chat remains disabled.
+Start with [the takeover audit](docs/CODEX_TAKEOVER_AUDIT.md), [implementation plan](docs/STANDALONE_IMPLEMENTATION_PLAN.md), [readiness matrix](STANDALONE_READINESS.md) and [local development](docs/LOCAL_DEVELOPMENT.md). A Next.js app runs locally with three languages and Supabase-backed shared records and access policies. The hosted backend and fixed accounts are configured; live authenticated acceptance testing remains pending. Medical chat remains disabled.
 
 To move development to Dad's computer, use [the transfer guide](docs/COMPUTER_TRANSFER.md) and [next-developer handoff](docs/NEXT_DEVELOPER_HANDOFF.md). Recommended development model: **GPT-6 Astra / High**, Extra High for safety/security reviews; [model guidance](docs/MODEL_GUIDANCE.md).
 

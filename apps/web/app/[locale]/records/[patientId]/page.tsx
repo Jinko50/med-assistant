@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { z } from 'zod';
 import { isLocale } from '../../../../lib/i18n';
 import { readPatient } from '../../../../lib/dal';
@@ -12,7 +13,7 @@ export default async function RecordPage({ params }: { params: Promise<{ locale:
   if (!backendConfigured()) return <AccessMessage locale={locale} message="setup"/>;
   try {
     const result = await readPatient(patientId);
-    return <Shell locale={locale} path={`/records/${patientId}`} role={result.role}><RecordView locale={locale} {...result}/></Shell>;
+    return <Shell locale={locale} path={`/records/${patientId}`} role={result.role}>{result.role === 'caregiver' && <p><Link href={`/${locale}/records/${patientId}/documents`}>Documents / Документы / מסמכים</Link></p>}<RecordView locale={locale} {...result}/></Shell>;
   } catch (error) {
     return <AccessMessage locale={locale} message={error instanceof Error && error.message === 'ACCESS_DENIED' ? 'denied' : 'unavailable'}/>;
   }

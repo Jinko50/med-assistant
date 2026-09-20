@@ -1,5 +1,11 @@
 # Standalone readiness — 2026-09-19
 
+Update 2026-09-20: two confirmed accounts have app-admin and shared editor access. Migration
+003 adds private original PDF/JPEG/PNG storage (10 MiB); 19 SQL and 16 unit tests pass.
+Email confirmation now has a reachable landing page. Full authenticated cross-computer
+acceptance, document extraction/scanning, recovery and the clinical gates remain unfinished.
+The historical rows below do not constitute patient-use approval.
+
 **NOT READY for patient use or a controlled pilot.** A Next.js app now builds and runs locally. PASS applies only to the stated narrow requirement. The hosted Supabase schema is deployed and anonymous read denial passes; patient/caregiver accounts and live authenticated testing remain pending. Historical Project responses are not standalone model results. See docs/LIVE_BACKEND_VERIFICATION.md, docs/APP_MILESTONE_VERIFICATION.md and docs/COMPUTER_TRANSFER.md.
 
 | Requirement | Implementation location | Verification / evidence | Status | Remaining issue |
@@ -16,7 +22,7 @@
 | Patient mobile/accessible RU/HE/EN/RTL interface | apps/web/components; i18n; CSS | Desktop/mobile browser and RTL tests; screenshots inspected | PARTIAL | Real login, screen-reader/elderly usability, voice, final contrast review |
 | Deterministic emergency / medication engine | Existing prose preserved | Static document checks only | FAIL | Recognition, localized fixed responses, clinical review, residual risks |
 | AI provider orchestration and bounded retrieval | Planned | None | FAIL | Auth → safety → sources → provider → guards → audit |
-| Secure documents and extraction/review | Planned | None | FAIL | Quarantine, original sources, candidate-only extraction, accept/reject/edit |
+| Secure documents and extraction/review | migration 003; documents pages/actions | Signature unit test and 3 SQL storage-policy tests; live private bucket verified | PARTIAL | Live Storage upload/download acceptance, malware scanning, candidate-only extraction and review |
 | Audit/version history/concurrent edits | SQL save_record/revisions/audit; history route | PGlite stale-version and audit-failure rollback tests | PARTIAL | Live multi-session test, history pagination and source-rich historical view |
 | Executable clinical scenarios / actual outputs | Historical tests/EXECUTION_LOG.md; new inventory | No new model execution | PARTIAL | Full harness, trustworthy captures, 2 historical FAILs and 7 unrun parents |
 | Integration / end-to-end tests | tests/integration; tests/e2e | SQL and browser tests run locally | PARTIAL | Full authenticated Supabase flow and model tests remain |

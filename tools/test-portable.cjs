@@ -35,12 +35,18 @@ child.stdout.on('data', async data => {
       assert.equal(await page.locator('input[name=email]').isEnabled(),true);
       await page.goto(base+'/en/register');
       assert.equal(await page.getByRole('button',{name:'Create my account'}).isEnabled(),true);
+      assert.equal(await page.locator('input[name=password]').getAttribute('minlength'),'6');
       await page.goto(base+'/en/admin');
       assert.equal(await page.getByRole('heading',{name:'Account administration'}).count(),0);
       assert.equal(await page.getByRole('button',{name:'Approve email address'}).count(),0);
+      const documents='/en/records/40000000-0000-4000-8000-000000000001/documents';
+      await page.goto(base+documents);
+      assert.equal(await page.getByRole('button',{name:'Upload document',exact:true}).count(),0);
+      const download=await fetch(base+documents+'/40000000-0000-4000-8000-000000000002',{redirect:'manual'});
+      assert.equal(download.status,403);
       assert.equal((await page.goto(base+'/en/preview/patient')).status(),404);
       assert.deepEqual(failures,[]);
-      console.log('PASS: connected extracted app, enabled login, registration, anonymous admin denial, preview disabled, assets and blocked clinical readiness. Live authenticated flows still require account setup.');
+      console.log('PASS: connected extracted app, enabled login, six-character registration minimum, anonymous admin/document denial, preview disabled, assets and blocked clinical readiness. Live authenticated acceptance still required.');
       return;
     }
     for (const locale of ['ru', 'en', 'he']) {
