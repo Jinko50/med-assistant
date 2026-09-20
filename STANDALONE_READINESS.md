@@ -1,5 +1,14 @@
 # Standalone readiness — 2026-09-19
 
+Update 2026-09-20 (Claude Code): administration, registration and document screens are
+fully localized in RU/HE/EN with visible language selection and correct lang/dir; Hebrew is
+right-to-left with LTR email fields. Record and upload navigation is prominent after login,
+gated on actual record membership rather than administrator status. Release
+v0.4.0-localized-test.1 is published and its extracted ZIP passes an automated smoke test of
+those behaviours. Authenticated upload/download against Storage and cross-device visibility
+are STILL UNVERIFIED: they need the account holders' own passwords, which were not requested
+or handled. No database, account, grant or migration was changed.
+
 Update 2026-09-20: two confirmed accounts have app-admin and shared editor access. Migration
 003 adds private original PDF/JPEG/PNG storage (10 MiB); 19 SQL and 16 unit tests pass.
 Email confirmation now has a reachable landing page. Full authenticated cross-computer
@@ -19,10 +28,10 @@ The historical rows below do not constitute patient-use approval.
 | Server authorization, RLS and revocation | apps/web/lib/dal.ts; database migration | PGlite policy tests + unauthorized-page browser checks | PARTIAL | Verify real Supabase HTTP routes, expiry and storage access |
 | Structured persistence, provenance, UNKNOWN, conflicts | packages/domain/record.ts; database/migrations/001_record_foundation.sql | Runtime validation + actual SQL constraints/transactions tested | PARTIAL | Generic record foundation; full clinical entities/reconciliation/candidates absent |
 | Caregiver record/reconciliation UI | apps/web/components/record-form.tsx | Build and readonly preview browser tests | PARTIAL | Real provider form save and reconciliation UI unverified/incomplete |
-| Patient mobile/accessible RU/HE/EN/RTL interface | apps/web/components; i18n; CSS | Desktop/mobile browser and RTL tests; screenshots inspected | PARTIAL | Real login, screen-reader/elderly usability, voice, final contrast review |
+| Patient mobile/accessible RU/HE/EN/RTL interface | apps/web/components; i18n; CSS; admin/register/document pages | Desktop/mobile browser and RTL tests; tests/unit/i18n.test.ts; packaged-ZIP smoke test asserts RU/HE rendering, lang/dir, language links and LTR email fields | PARTIAL | Real login, screen-reader/elderly usability, voice, final contrast review |
 | Deterministic emergency / medication engine | Existing prose preserved | Static document checks only | FAIL | Recognition, localized fixed responses, clinical review, residual risks |
 | AI provider orchestration and bounded retrieval | Planned | None | FAIL | Auth → safety → sources → provider → guards → audit |
-| Secure documents and extraction/review | migration 003; documents pages/actions | Signature unit test and 3 SQL storage-policy tests; live private bucket verified | PARTIAL | Live Storage upload/download acceptance, malware scanning, candidate-only extraction and review |
+| Secure documents and extraction/review | migration 003; documents pages/actions | Signature unit test and 3 SQL storage-policy tests; live private bucket verified; upload route now localized and reachable in two clicks from the record | PARTIAL | **Live Storage upload/download acceptance still unverified — needs the account holders' own sign-in.** Malware scanning, candidate-only extraction and review |
 | Audit/version history/concurrent edits | SQL save_record/revisions/audit; history route | PGlite stale-version and audit-failure rollback tests | PARTIAL | Live multi-session test, history pagination and source-rich historical view |
 | Executable clinical scenarios / actual outputs | Historical tests/EXECUTION_LOG.md; new inventory | No new model execution | PARTIAL | Full harness, trustworthy captures, 2 historical FAILs and 7 unrun parents |
 | Integration / end-to-end tests | tests/integration; tests/e2e | SQL and browser tests run locally | PARTIAL | Full authenticated Supabase flow and model tests remain |
