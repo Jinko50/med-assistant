@@ -1,5 +1,9 @@
 # Continue Med Assistant development
 
+> Superseded for the current handoff by [CLAUDE_CODE_HANDOFF.md](CLAUDE_CODE_HANDOFF.md),
+> prepared 2026-09-20 after hosted account setup, document storage and installation on dad's
+> laptop. The text below is historical and contains outdated implementation limits.
+
 2026-09-19. Recommended model: GPT-6 Astra / High; Extra High for safety/authorization review. Always give model guidance at major milestones.
 
 ## Paste into the new Codex task
