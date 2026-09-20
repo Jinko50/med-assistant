@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { locales, translations, type Locale } from '../lib/i18n';
 import { signOut } from '../app/actions';
 import { Icon } from './icon';
+import { APP_VERSION } from '../lib/version';
 
 export function LanguageLinks({ locale, path }: { locale: Locale; path: string }) {
   // Full navigation updates the root document's lang/dir (root layouts persist on client transitions).
@@ -26,7 +27,7 @@ export function Shell({ locale, path, role, preview = false, children }: {
         <header className="topbar"><span className="breadcrumb">{role === 'caregiver' ? t.caregiver : t.patient} <span>/</span> {t.overview}</span><div className="topbar-actions"><LanguageLinks locale={locale} path={path}/>{preview ? <Link className="text-link" href={`/${locale}/login`}>{t.signIn}<Icon name="arrow" size={17}/></Link> : <form action={signOut}><input type="hidden" name="locale" value={locale}/><button className="text-link" type="submit">{t.signOut}</button></form>}</div></header>
         {preview && <div className="preview-banner"><span>{t.previewNotice}</span><Link href={`/${locale}/preview/${role === 'patient' ? 'caregiver' : 'patient'}`}>{role === 'patient' ? t.previewCaregiver : t.previewPatient} <span aria-hidden="true">↗</span></Link></div>}
         <main id="main" className={`page-content ${role === 'patient' ? 'patient-content' : ''}`}>{children}</main>
-        <footer className="footer"><span>Med Assistant</span><span>{t.tagline}</span><span>{t.development}</span></footer>
+        <footer className="footer"><span>Med Assistant</span><span>{t.tagline}</span><span>{t.development}</span><span title={t.updateHelp}>{t.versionLabel} {APP_VERSION}</span></footer>
       </div>
     </div>
   </>;

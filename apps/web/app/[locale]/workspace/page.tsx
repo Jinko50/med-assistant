@@ -20,7 +20,10 @@ export default async function Workspace({ params }: { params: Promise<{ locale: 
     if (dbError) return <AccessMessage locale={locale} message="unavailable"/>;
     patientId = data?.[0]?.patient_id;
   } catch { return <AccessMessage locale={locale} message="unavailable"/>; }
+  // Everyday use comes first. An administrator who is also a member of a record
+  // lands on that record; user management stays one click away from there.
+  // An administrator with no record access still lands on administration.
+  if (patientId) redirect(`/${locale}/records/${patientId}`);
   if (admin) redirect(`/${locale}/admin`);
-  if (!patientId) return <AccessMessage locale={locale} message="noAccess"/>;
-  redirect(`/${locale}/records/${patientId}`);
+  return <AccessMessage locale={locale} message="noAccess"/>;
 }

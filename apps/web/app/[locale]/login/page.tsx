@@ -5,6 +5,7 @@ import { backendConfigured, previewEnabled } from '../../../lib/config';
 import { LoginForm } from '../../../components/login-form';
 import { LanguageLinks } from '../../../components/shell';
 import { Icon } from '../../../components/icon';
+import { APP_VERSION } from '../../../lib/version';
 export const dynamic = 'force-dynamic';
 export default async function Login({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params; if (!isLocale(locale)) notFound(); const t = translations[locale];
@@ -13,5 +14,5 @@ export default async function Login({ params }: { params: Promise<{ locale: stri
     <section className="login-panel"><p className="eyebrow">{t.welcome}</p><h2>{t.signIn}</h2><p>{t.loginDescription}</p><LoginForm locale={locale} configured={backendConfigured()}/>
       {previewEnabled() && <div className="preview-options"><span className="tiny">{t.previewNotice}</span><Link className="button secondary" href={`/${locale}/preview/patient`}>{t.previewPatient}<Icon name="arrow" size={18}/></Link><Link className="text-link" href={`/${locale}/preview/caregiver`}>{t.previewCaregiver}<Icon name="arrow" size={16}/></Link></div>}
       <p className="tiny login-disclaimer">{t.development}</p>
-    </section></main><footer className="login-footer">{t.emergency} {t.emergencyDetail}</footer></div>;
+    </section></main><footer className="login-footer">{t.emergency} {t.emergencyDetail} <span data-app-version={APP_VERSION}>{t.versionLabel} {APP_VERSION}</span></footer></div>;
 }

@@ -45,8 +45,25 @@ child.stdout.on('data', async data => {
       const download=await fetch(base+documents+'/40000000-0000-4000-8000-000000000002',{redirect:'manual'});
       assert.equal(download.status,403);
       assert.equal((await page.goto(base+'/en/preview/patient')).status(),404);
+      // The reported defect: /ru/ served English with no way to change language.
+      await page.goto(base+'/ru/register');
+      assert.equal(await page.locator('html').getAttribute('lang'),'ru');
+      assert.equal(await page.locator('html').getAttribute('dir'),'ltr');
+      assert.equal(await page.getByRole('heading',{name:'Set up your account'}).count(),0,'/ru/register must not be English');
+      assert.equal(await page.getByRole('heading',{name:'Создание аккаунта'}).count(),1);
+      assert.ok(await page.locator('nav.languages a[hreflang=he]').count()>0,'language selection must be visible');
+      await page.goto(base+'/he/register');
+      assert.equal(await page.locator('html').getAttribute('lang'),'he');
+      assert.equal(await page.locator('html').getAttribute('dir'),'rtl');
+      assert.equal(await page.getByRole('heading',{name:'הקמת חשבון'}).count(),1);
+      assert.equal(await page.locator('input[name=email]').getAttribute('dir'),'ltr','email stays left-to-right in Hebrew');
+      // A visible build identifier, readable before signing in.
+      await page.goto(base+'/en/login');
+      assert.ok(await page.locator('[data-app-version]').count()>0,'login must show the build version');
+      const shown=await page.locator('[data-app-version]').getAttribute('data-app-version');
+      assert.ok(shown && shown.length>0 && shown!=='0.4.0-dev','packaged build must carry a stamped version, got '+shown);
       assert.deepEqual(failures,[]);
-      console.log('PASS: connected extracted app, enabled login, six-character registration minimum, anonymous admin/document denial, preview disabled, assets and blocked clinical readiness. Live authenticated acceptance still required.');
+      console.log('PASS: connected extracted app, enabled login, six-character registration minimum, anonymous admin/document denial, preview disabled, RU/HE localization with correct lang/dir and visible language selection, LTR email field in Hebrew, stamped build version, assets and blocked clinical readiness. Live authenticated acceptance still required.');
       return;
     }
     for (const locale of ['ru', 'en', 'he']) {
