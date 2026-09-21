@@ -1,5 +1,16 @@
 # Standalone readiness — 2026-09-19
 
+Update 2026-09-21 later (Claude Code): the owner asked for 50 MB originals, so the cap was
+raised from 10 MiB to 50,000,000 bytes and the transfer was moved off the app server — the
+browser now uploads straight to Storage with a short-lived signed URL, which removes the
+request path that truncated the body and produced the full-page error. Migration 004 widens
+the metadata constraint and the bucket ceiling to the same number and is covered by SQL
+tests, but it is **not yet applied to the live project**, so files above 10 MiB are still
+refused there, now with a clear localized message at the first step. Published
+v0.5.0-large-uploads.1. Authorization is unchanged. Authenticated upload, download and
+cross-computer visibility remain UNVERIFIED and need the account holders' own sign-in.
+Chat still does not exist.
+
 Update 2026-09-21 (Claude Code): **RELEASE HELD.** A live document upload failed with a
 full-page server error. Root cause reproduced with synthetic bytes and repaired: a request
 body above the framework limit is silently truncated, the multipart payload then fails to
@@ -60,7 +71,7 @@ The historical rows below do not constitute patient-use approval.
 | Patient mobile/accessible RU/HE/EN/RTL interface | apps/web/components; i18n; CSS; admin/register/document pages | Desktop/mobile browser and RTL tests; tests/unit/i18n.test.ts; packaged-ZIP smoke test asserts RU/HE rendering, lang/dir, language links and LTR email fields | PARTIAL | Real login, screen-reader/elderly usability, voice, final contrast review |
 | Deterministic emergency / medication engine | Existing prose preserved | Static document checks only | FAIL | Recognition, localized fixed responses, clinical review, residual risks |
 | AI provider orchestration and bounded retrieval | Planned | None | FAIL | No patient-facing chat exists in any build, though the owner expects one. Auth → safety → sources → provider → guards → audit must come first |
-| Secure documents and extraction/review | migration 003; documents pages/actions | Signature unit test and 3 SQL storage-policy tests; live private bucket verified; upload route localized; oversized-upload and request-limit repair verified with synthetic probes and 11 unit tests | FAIL | **A real live upload produced a full-page server error.** Repaired but NOT retested by a signed-in upload/download. Files above 10 MiB are refused, not supported. Malware scanning, candidate-only extraction and review |
+| Secure documents and extraction/review | migrations 003-004; documents pages/actions; direct signed-URL upload | 43 unit tests incl. exact size boundaries, retry and interruption handling; 4 SQL storage/size tests; request and CSP probe against both the built and the packaged app; live private bucket verified | FAIL | **The repaired path has still not been retested by a signed-in upload/download.** Migration 004 is not yet applied to the live project, so >10 MiB is still refused there. Supported cap is now 50 MB once it is applied. Malware scanning, resumable transfer, candidate-only extraction and review |
 | Audit/version history/concurrent edits | SQL save_record/revisions/audit; history route | PGlite stale-version and audit-failure rollback tests | PARTIAL | Live multi-session test, history pagination and source-rich historical view |
 | Executable clinical scenarios / actual outputs | Historical tests/EXECUTION_LOG.md; new inventory | No new model execution | PARTIAL | Full harness, trustworthy captures, 2 historical FAILs and 7 unrun parents |
 | Integration / end-to-end tests | tests/integration; tests/e2e | SQL and browser tests run locally | PARTIAL | Full authenticated Supabase flow and model tests remain |
