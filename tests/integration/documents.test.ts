@@ -14,7 +14,7 @@ before(async()=>{
  create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
  create table storage.objects(id uuid default gen_random_uuid(),bucket_id text,name text,unique(bucket_id,name));
  alter table storage.objects enable row level security;grant select,insert,update,delete on storage.objects to authenticated;`);
- for(const name of ['001_record_foundation','003_private_documents','004_large_documents'])await db.exec(readFileSync(new URL(`../../database/migrations/${name}.sql`,import.meta.url),'utf8'));
+ for(const name of ['001_record_foundation','003_private_documents','004_large_documents','005_pending_document_verification'])await db.exec(readFileSync(new URL(`../../database/migrations/${name}.sql`,import.meta.url),'utf8'));
  await db.query('insert into auth.users values($1),($2),($3)',[care,patient,other]);
  pid=(await db.query<{id:string}>("insert into public.patients(display_name,preferred_language) values('Synthetic documents','en') returning id")).rows[0].id;
  await db.query("insert into public.patient_access(patient_id,user_id,role) values($1,$2,'caregiver'),($1,$3,'patient')",[pid,care,patient]);
@@ -27,13 +27,21 @@ test('only assigned editors can reserve document uploads',async()=>{
  await asUser(care);doc=(await reserve()).rows[0].id;
  await assert.rejects(db.query('select public.finish_document($1)',[doc]),/Upload incomplete/);
 });
-test('storage restricts upload paths and hides pending originals',async()=>{
+test('uploader can verify pending original while other editors cannot read or finalize it',async()=>{
  const insert=(name:string)=>db.query("insert into storage.objects(bucket_id,name) values('medical-originals',$1)",[name]);
  await asUser(other);await assert.rejects(insert(`${pid}/${doc}`),/row-level security/);
  await asUser(care);await assert.rejects(insert(`${pid}/arbitrary`),/row-level security/);
- await insert(`${pid}/${doc}`);assert.equal((await db.query('select * from storage.objects')).rows.length,0);
+ await insert(`${pid}/${doc}`);assert.equal((await db.query('select * from storage.objects')).rows.length,1);
+ // This SELECT is the permission used by Storage createSignedUrl during verification.
+ await db.exec('reset role');
+ await db.query("insert into public.patient_access(patient_id,user_id,role) values($1,$2,'caregiver')",[pid,other]);
+ await asUser(other);assert.equal((await db.query('select * from storage.objects')).rows.length,0);
+ await assert.rejects(db.query('select public.finish_document($1)',[doc]),/Access denied/);
+ await asUser(care);
  await db.query('select public.finish_document($1)',[doc]);
  assert.equal((await db.query('select * from storage.objects')).rows.length,1);
+ await asUser(other);assert.equal((await db.query('select * from storage.objects')).rows.length,1);
+ await asUser(care);
  assert.equal((await db.query("select * from public.audit_events where event_type='document.uploaded'")).rows.length,1);
  await db.query('select public.finish_document($1)',[doc]);
  assert.equal((await db.query("select * from public.audit_events where event_type='document.uploaded'")).rows.length,1);
@@ -62,7 +70,7 @@ test('migration 004 raises the document ceiling in metadata and in storage toget
   'the bucket ceiling must equal the application cap exactly');
  assert.equal(bucket.rows[0].public,false,'the bucket must stay private');
  const version=await db.query<{version:number}>('select max(version) version from public.schema_versions');
- assert.equal(Number(version.rows[0].version),4);
+ assert.equal(Number(version.rows[0].version),5);
 
  // Earlier tests revoke access on the shared patient, so use a fresh record here.
  const large=(await db.query<{id:string}>("insert into public.patients(display_name,preferred_language) values('Synthetic large','en') returning id")).rows[0].id;
