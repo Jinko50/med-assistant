@@ -82,8 +82,13 @@ export default async function Chat({ params }: { params: Promise<{ locale: strin
               </ul>}
             </section>
 
-            {/* Which company, if any, receives what is typed here. Answerable from the
-                screen rather than from the source code. */}
+            {/* Two different questions, answered separately, because conflating them once
+                produced a false claim. Where the conversation is STORED is always the same
+                answer - the family's private hosted record - and is stated whether or not a
+                model service is switched on. Which company, if any, additionally RECEIVES
+                it is the second sentence. Both answerable from the screen rather than from
+                the source code. */}
+            <p className="tiny">{t.privacyStorage}</p>
             <p className="tiny">{assistantAvailable() && config ? fill(t.aiOn, { recipient: config.recipient }) : t.aiOff}</p>
             <p className="tiny">{t.development} · {t.versionLabel} {APP_VERSION}</p>
             <form action={signOut}>

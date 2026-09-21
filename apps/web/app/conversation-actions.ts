@@ -54,6 +54,9 @@ export interface SendState {
 
 const sendInput = z.object({
   patient: z.uuid(),
+  // The browser's identifier for this turn, unchanged across a retry. It is what makes
+  // resending a half-failed turn harmless rather than duplicating the person's message.
+  token: z.uuid(),
   text: z.string().max(MAX_MESSAGE_CHARS),
   // The client uploads first, through the existing direct-to-Storage path, and passes the
   // reserved document id here. It is re-checked below; the client's word is not evidence.
@@ -81,6 +84,7 @@ export async function sendMessage(_state: SendState, form: FormData): Promise<Se
   if (!isLocale(locale)) return { message: 'sendInvalid' };
   const parsed = sendInput.safeParse({
     patient: form.get('patient'),
+    token: form.get('token'),
     text: String(form.get('text') ?? ''),
     documentId: String(form.get('documentId') ?? ''),
     attachment: String(form.get('attachment') ?? 'none'),
@@ -121,20 +125,14 @@ export async function sendMessage(_state: SendState, form: FormData): Promise<Se
       hasText: Boolean(text),
     });
 
-    const person = await db.from('conversation_messages').insert({
-      patient_id: parsed.data.patient, author_id: user.id, role: 'person',
-      locale, body: text, document_id: documentId, safety_level: decision.level,
-    }).select('id,role,body,created_at,document_id').single();
-    // A missing table is the pre-migration state, not a crash. It is reported as something
-    // the administrator must do, and the person's text is preserved in the form.
-    if (person.error) return { message: person.error.code === '42P01' ? 'sendUnprepared' : 'sendUnavailable' };
-
     let body = replyText(locale, plan.parts);
     // Exactly one clarification, and only about a unit the person genuinely did not write.
     if (plan.clarify) {
       body += `\n\n${fill(translations[locale].replyClarifyUnit, { value: plan.clarify.value })}`;
     }
     // The model runs last, is optional, and never replaces the deterministic lines above.
+    // It also runs BEFORE anything is stored, so a provider timeout cannot leave a stored
+    // question with no answer beside it.
     if (plan.generate) {
       const answer = await generate({
         locale: locale as Locale, question: text,
@@ -145,31 +143,45 @@ export async function sendMessage(_state: SendState, form: FormData): Promise<Se
         : [body, replyText(locale, [answer.error])].filter(Boolean).join('\n\n');
     }
 
-    const assistant = await db.from('conversation_messages').insert({
-      patient_id: parsed.data.patient, author_id: user.id, role: 'assistant',
-      locale, body, safety_level: 'none',
-    }).select('id,role,body,created_at,document_id').single();
-    if (assistant.error) return { message: 'sendUnavailable' };
-
-    // Proposed, never confirmed. Nothing a person did not review enters their history.
-    let facts: FactView[] = [];
-    if (plan.propose.length) {
-      const inserted = await db.from('conversation_facts').insert(plan.propose.map(m => ({
-        patient_id: parsed.data.patient, message_id: person.data.id, kind: m.kind,
-        value: m.value, unit: m.unit, unit_stated: m.unitStated,
-        reported_when: reading.time?.phrase ?? null,
-        provenance: 'REPORTED', state: 'proposed', created_by: user.id,
-      }))).select('id,kind,value,unit,unit_stated,reported_when,state,created_at');
-      // A failure here loses the confirmation card, not the conversation. The person's
-      // words and the reply are already stored; saying nothing was read would be false.
-      if (!inserted.error) facts = factViews(inserted.data);
+    // One turn, one transaction. The person's message, the reply and the proposed readings
+    // commit together or not at all, and the browser's token makes a retry idempotent: a
+    // second attempt returns the same rows rather than storing the message twice. Before
+    // this was one call, a failure between the writes left a question with no answer, and
+    // pressing Retry duplicated it.
+    const posted = await db.rpc('post_conversation_turn', {
+      p_patient: parsed.data.patient,
+      p_locale: locale,
+      p_token: parsed.data.token,
+      p_body: text,
+      p_document: documentId,
+      p_safety: decision.level,
+      p_reply: body,
+      p_facts: plan.propose.map(m => ({
+        kind: m.kind, value: m.value, unit: m.unit, unit_stated: m.unitStated,
+        reported_when: reading.time?.phrase ?? '',
+      })),
+    });
+    if (posted.error || !posted.data) {
+      // A missing function or table is the pre-migration state, not a crash: it is reported
+      // as something the administrator must do, and the text stays in the composer.
+      const missing = posted.error?.code === '42P01' || posted.error?.code === 'PGRST202'
+        || /post_conversation_turn/.test(posted.error?.message ?? '');
+      return { message: missing ? 'sendUnprepared' : 'sendUnavailable' };
     }
 
+    const turn = posted.data as { person: Record<string, unknown>; assistant: Record<string, unknown>; facts: Array<Record<string, unknown>> };
     return {
       message: '',
       added: [
-        { id: String(person.data.id), role: 'person', body: text, createdAt: String(person.data.created_at), documentId, documentName, facts },
-        { id: String(assistant.data.id), role: 'assistant', body, createdAt: String(assistant.data.created_at), documentId: null, documentName: null, facts: [] },
+        {
+          id: String(turn.person.id), role: 'person', body: String(turn.person.body ?? ''),
+          createdAt: String(turn.person.created_at), documentId, documentName,
+          facts: factViews(turn.facts),
+        },
+        {
+          id: String(turn.assistant.id), role: 'assistant', body: String(turn.assistant.body ?? ''),
+          createdAt: String(turn.assistant.created_at), documentId: null, documentName: null, facts: [],
+        },
       ],
     };
   } catch (error) {

@@ -1,5 +1,11 @@
 -- 007: the conversation, and the reviewed memory it proposes.
 --
+-- REVISED 2026-09-21 after the independent review in docs/CHAT_INDEPENDENT_REVIEW.md, and
+-- before ever being applied anywhere: a read-only check confirmed the live project does not
+-- have these tables. The revision adds `client_token` and `post_conversation_turn`, so that
+-- one turn is one transaction and a retry cannot duplicate a message. If you took a copy of
+-- this file before that date, discard it and apply this one.
+--
 -- Additive only. It adds two tables, their policies and one review function. It does not
 -- alter any existing table, function, policy, account, grant or bucket, and it never resets
 -- anything. Migrations 001-006 were applied through the dashboard and are not registered in
@@ -38,11 +44,17 @@ create table public.conversation_messages (
   -- always 'none' because the screen runs on what the person wrote.
   safety_level text not null default 'none'
     check (safety_level in ('none', 'urgent', 'medication', 'emergency')),
+  -- The browser's own identifier for one turn, kept across a retry. It is what makes
+  -- resending a turn that half-failed harmless: the second attempt finds the first and
+  -- completes it instead of writing the person's message twice. Null is allowed and, per
+  -- SQL, nulls do not collide, so rows written any other way are unaffected.
+  client_token uuid,
   created_at timestamptz not null default now(),
   constraint conversation_assistant_unscreened check (role = 'person' or safety_level = 'none'),
   -- A person may send a file with nothing written; the assistant always says something.
   constraint conversation_message_not_empty check (
-    length(trim(body)) > 0 or (role = 'person' and document_id is not null))
+    length(trim(body)) > 0 or (role = 'person' and document_id is not null)),
+  constraint conversation_one_turn_per_token unique (patient_id, client_token, role)
 );
 create index conversation_messages_recent on public.conversation_messages(patient_id, created_at desc);
 
@@ -141,6 +153,66 @@ begin
 end; $$;
 revoke all on function public.review_conversation_fact(uuid, text, text, text) from public, anon;
 grant execute on function public.review_conversation_fact(uuid, text, text, text) to authenticated;
+
+-- One turn is one transaction.
+--
+-- A turn is three writes: what the person said, what the assistant answered, and the
+-- readings proposed from it. Performed separately they can half-succeed — the person's
+-- message stored, the reply lost — and a retry then stores the message twice while the
+-- failed fact insert disappears silently. Here they commit together or not at all, and the
+-- browser's own token makes a retry idempotent: a second attempt with the same token
+-- completes whatever is missing and returns the same rows.
+--
+-- The whole turn is composed before this is called: the safety screen, the measurement
+-- reader, the reply plan and any model answer have all already run. Nothing is decided here.
+create function public.post_conversation_turn(
+  p_patient uuid, p_locale text, p_token uuid,
+  p_body text, p_document uuid, p_safety text,
+  p_reply text, p_facts jsonb default '[]'::jsonb)
+returns jsonb language plpgsql security definer set search_path = '' as $$
+declare person_id uuid; assistant_id uuid;
+begin
+  if p_token is null then raise exception 'A turn needs a token' using errcode = '22023'; end if;
+  -- read_record is deliberate: a patient with read-only access may talk about their own day.
+  if not private.has_access(p_patient) then
+    raise exception 'Access denied' using errcode = '42501';
+  end if;
+
+  select id into person_id from public.conversation_messages
+    where patient_id = p_patient and client_token = p_token and role = 'person';
+  if person_id is null then
+    insert into public.conversation_messages(
+      patient_id, author_id, role, locale, body, document_id, safety_level, client_token)
+    values (p_patient, auth.uid(), 'person', p_locale, coalesce(p_body, ''),
+            p_document, coalesce(p_safety, 'none'), p_token)
+    returning id into person_id;
+    -- Proposed, always. A fact that cannot be stored aborts the turn rather than vanishing.
+    insert into public.conversation_facts(
+      patient_id, message_id, kind, value, unit, unit_stated, reported_when,
+      provenance, state, created_by)
+    select p_patient, person_id, fact->>'kind', fact->>'value',
+           coalesce(fact->>'unit', ''), coalesce((fact->>'unit_stated')::boolean, false),
+           nullif(fact->>'reported_when', ''), 'REPORTED', 'proposed', auth.uid()
+    from jsonb_array_elements(coalesce(p_facts, '[]'::jsonb)) fact;
+  end if;
+
+  select id into assistant_id from public.conversation_messages
+    where patient_id = p_patient and client_token = p_token and role = 'assistant';
+  if assistant_id is null then
+    insert into public.conversation_messages(
+      patient_id, author_id, role, locale, body, safety_level, client_token)
+    values (p_patient, auth.uid(), 'assistant', p_locale, p_reply, 'none', p_token)
+    returning id into assistant_id;
+  end if;
+
+  return jsonb_build_object(
+    'person', (select to_jsonb(m) from public.conversation_messages m where m.id = person_id),
+    'assistant', (select to_jsonb(m) from public.conversation_messages m where m.id = assistant_id),
+    'facts', coalesce((select jsonb_agg(to_jsonb(f) order by f.created_at)
+      from public.conversation_facts f where f.message_id = person_id), '[]'::jsonb));
+end; $$;
+revoke all on function public.post_conversation_turn(uuid, text, uuid, text, uuid, text, text, jsonb) from public, anon;
+grant execute on function public.post_conversation_turn(uuid, text, uuid, text, uuid, text, text, jsonb) to authenticated;
 
 insert into public.schema_versions(version) values (7);
 

@@ -20,6 +20,7 @@ const chatPage = source('apps/web/app/[locale]/records/[patientId]/chat/page.tsx
 const conversationUi = source('apps/web/components/conversation.tsx');
 const workspace = source('apps/web/app/[locale]/workspace/page.tsx');
 const migration = source('database/migrations/007_conversation.sql');
+const machine = source('packages/domain/turn.ts');
 
 const before = (haystack: string, first: string, second: string) => {
   const a = haystack.indexOf(first);
@@ -30,9 +31,21 @@ const before = (haystack: string, first: string, second: string) => {
 };
 
 test('every turn authorizes before it screens, and screens before it stores', () => {
-  before(actions, 'const decision = screen(', "from('conversation_messages').insert");
-  before(actions, 'const reading = read(', "from('conversation_messages').insert");
-  before(actions, "authorizedPatient(parsed.data.patient, 'read_record')", "from('conversation_messages').insert");
+  before(actions, 'const decision = screen(', "rpc('post_conversation_turn'");
+  before(actions, 'const reading = read(', "rpc('post_conversation_turn'");
+  before(actions, "authorizedPatient(parsed.data.patient, 'read_record')", "rpc('post_conversation_turn'");
+});
+
+test('one turn is one write, so a failure cannot half-store it', () => {
+  // Three separate inserts could leave a question stored with no answer beside it, and a
+  // retry then stored the question twice. The whole turn now goes through one function.
+  assert.equal((actions.match(/from\('conversation_messages'\)\.insert/g) ?? []).length, 0);
+  assert.equal((actions.match(/from\('conversation_facts'\)\.insert/g) ?? []).length, 0);
+  assert.match(actions, /rpc\('post_conversation_turn'/);
+  // The database side commits the message, the reply and the readings together, and
+  // recognises a repeated token instead of duplicating.
+  assert.match(migration, /constraint conversation_one_turn_per_token unique \(patient_id, client_token, role\)/);
+  assert.match(migration, /if p_token is null then raise exception/);
 });
 
 test('the model is the last step, and only when the plan asked for it', () => {
@@ -98,7 +111,7 @@ test('the main screen shows only the conversation, the composer and the language
 });
 
 test('"uploaded" and "read" stay separate words in the interface', () => {
-  assert.match(conversationUi, /setPhase\('uploaded'\)/);
+  assert.match(conversationUi, /dispatch\(\{ type: 'delivered'/);
   assert.match(conversationUi, /chatUploadStored/);
   for (const locale of locales) {
     const t = translations[locale] as unknown as Record<string, string>;
@@ -107,13 +120,21 @@ test('"uploaded" and "read" stay separate words in the interface', () => {
   }
 });
 
-test('a failure keeps the message and does not re-upload a file that already arrived', () => {
-  assert.match(conversationUi, /if \(uploadedId\) return uploadedId;/,
-    'Retry must resume rather than send the bytes twice');
-  // The draft and the file are cleared only after a send that actually succeeded.
-  const clear = conversationUi.indexOf("setDraft(''); setFile(null); setUploadedId('');");
-  const failed = conversationUi.indexOf('setFailure(result.message');
-  assert.ok(failed !== -1 && clear !== -1 && failed < clear, 'the failure path must return before clearing');
+test('the composer delegates its failure handling to the tested state machine', () => {
+  // What actually happens on a failure is asserted behaviourally in tests/unit/turn.test.ts.
+  // These two checks only confirm the component uses that machine rather than keeping a
+  // second, untested copy of the rules in component state.
+  assert.match(conversationUi, /useReducer\(turn, '', \(\) => emptyTurn\(''\)\)/);
+  assert.match(conversationUi, /uploadStep\(state\)/);
+  // No second, untested copy of the turn rules in component state. FactCard keeps its own
+  // local state, which is why this names the setters rather than counting useState calls.
+  for (const duplicate of ['setPhase', 'setFailure', 'setUploadedId', 'setPercent', 'setDraft']) {
+    assert.equal(conversationUi.includes(duplicate), false, `${duplicate} duplicates the machine`);
+  }
+  // The id is recorded when the bytes arrive, NOT after verification: that ordering is what
+  // lets a retry resume instead of re-sending a 40 MB file.
+  before(machine, "case 'delivered':", "case 'verified':");
+  assert.match(machine, /return state\.pendingId \? 'verify' : 'begin';/);
   assert.match(conversationUi, /chatUploadKept/);
 });
 
@@ -144,10 +165,27 @@ test('the measurement vocabulary is named in all three languages', () => {
   for (const kind of kinds) assert.ok(migration.includes(`'${kind}'`), `migration is missing ${kind}`);
 });
 
-test('who receives the conversation is answerable from the screen', () => {
+test('where the conversation is stored is disclosed separately from who receives it', () => {
+  // These were one sentence, and it was false: aiOff said nothing typed leaves this
+  // computer, while every message is persisted to hosted Supabase and every attachment to
+  // hosted Storage. Storage is now stated unconditionally, AI transmission separately.
+  assert.match(chatPage, /<p className="tiny">\{t\.privacyStorage\}<\/p>/);
   assert.match(chatPage, /assistantAvailable\(\) && config \? fill\(t\.aiOn, \{ recipient: config\.recipient \}\) : t\.aiOff/);
   for (const locale of locales) {
     const t = translations[locale] as unknown as Record<string, string>;
     assert.match(t.aiOn, /\{recipient\}/, `${locale}.aiOn must name the recipient`);
+    assert.ok(t.privacyStorage.trim().length > 0, `${locale}.privacyStorage`);
+    // aiOff may only speak about the AI service, never about where anything is kept.
+    assert.doesNotMatch(t.aiOff, /computer|компьютер|מחשב/i,
+      `${locale}.aiOff must not claim anything about where the conversation is stored`);
+  }
+});
+
+test('nothing claims an attachment is being read', () => {
+  // There is no document reader and no processing job. A provider key does not create one.
+  assert.doesNotMatch(source('packages/domain/reply.ts'), /parts\.push\('replyAttachmentQueued'\)/);
+  for (const locale of locales) {
+    const t = translations[locale] as unknown as Record<string, unknown>;
+    assert.equal(t.replyAttachmentQueued, undefined, `${locale} still carries the removed claim`);
   }
 });

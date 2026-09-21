@@ -16,9 +16,14 @@ The conversation is not a shell around a model. With nothing configured it still
 * proposes what it read, lets a person confirm or correct it, and retrieves exactly that in a
   later conversation on another computer.
 
-What it cannot do without a provider is answer a free question and read the contents of a
-document or a photograph. It says so, in those words, rather than producing sympathetic text
-that reads like an answer.
+What it cannot do without a provider is answer a free question. It says so, in those words,
+rather than producing sympathetic text that reads like an answer.
+
+Reading the contents of a document or a photograph is **not** something a provider key would
+switch on. There is no document reader and no processing job anywhere in this application, so
+an attachment is described as stored and explicitly not read, whatever is configured. An
+earlier version switched to "I am reading it now" as soon as a key was present; that claim is
+deleted, and a test asserts it cannot return.
 
 ## The two gates
 
@@ -59,8 +64,15 @@ the request, not a guarantee about the response — output checking is unwritten
 as unfinished in `STANDALONE_READINESS.md`.
 
 The conversation screen shows which company receives the text whenever the gates are open,
-and says "nothing you write here leaves this computer" when they are not, so the question is
-answerable from the screen rather than from this file.
+and says that no outside assistant company receives anything when they are not.
+
+**Storage is a separate question, and is disclosed separately.** Whether or not a model
+service is switched on, every message and every attachment is saved in the family's private
+record on hosted Supabase — the same service that already holds the medical record. The
+screen says so, always. An earlier version of this app said "nothing you write here leaves
+this computer" when AI was off, which was false and false in the dangerous direction: it
+invited someone to type something they would not have typed into a cloud service. The
+independent review of 2026-09-21 caught it.
 
 ## Before switching it on
 

@@ -7,21 +7,26 @@
 // The governing rule is the owner's: never invent units, dates or medical facts. That is
 // enforced structurally, not by convention:
 //
-//   * A value is only read when a keyword for that measurement is present. A bare "72" is
-//     never a pulse.
-//   * A unit is either written by the person (unitStated: true), fixed by the notation
-//     itself (a systolic/diastolic pair is mmHg; that is what the "/" notation means), or
-//     ABSENT. Absent is reported as absent - needsUnit - and becomes the one short
-//     clarification the assistant is allowed to ask. It is never guessed from magnitude:
-//     37.8 is not assumed to be Celsius and 98.6 is not assumed to be Fahrenheit.
+//   * Every number is bound to ITS OWN label. A number belongs to the nearest measurement
+//     word, and only if that word is close enough. When two different measurement words are
+//     equally close, the number is AMBIGUOUS and is dropped rather than assigned. A bare
+//     "72" with no measurement word near it is never a reading.
+//   * A unit is either written by the person, or fixed by the notation itself (a
+//     systolic/diastolic pair is mmHg; that is what the "/" notation means), or ABSENT.
+//     Absent is reported as absent - needsUnit - and becomes the one short clarification
+//     the assistant is allowed to ask. It is never guessed. In particular a bare "degrees",
+//     "градусов" or "מעלות" does NOT mean Celsius: the scale stays unknown until written.
 //   * No calendar date is ever produced. "This morning" is kept as the person's own phrase.
 //     The only real timestamp is the one the database writes when the row is stored.
 //   * Nothing here interprets a reading. No threshold, no range, no "normal", no "high".
 //     A number is meaningful only against a target recorded by the patient's own clinician.
 //
-// Honest limit, stated here so it is not lost downstream: an empty result means NOTHING WAS
-// RECOGNISED. It does not mean the person reported nothing, and no caller may present it
-// as though the message contained no measurements.
+// Honest limits, stated here so they are not lost downstream:
+//   1. An empty result means NOTHING WAS RECOGNISED. It does not mean the person reported
+//      nothing, and no caller may present it as though the message contained no measurements.
+//   2. The vocabulary below is a fixed list of written word forms, not a morphological
+//      analyser. An inflection nobody listed is simply not recognised - which produces
+//      silence, not a wrong reading.
 
 export type MeasurementKind = 'blood_pressure' | 'pulse' | 'temperature' | 'weight' | 'glucose' | 'oxygen';
 
@@ -60,46 +65,78 @@ export const MAX_READ_CHARS = 4000;
 
 // Lowercased, punctuation kept where it carries meaning ("/" in 135/80, "%" in 96%,
 // "." and "," as decimal separators, the degree sign). Hebrew points are removed because
-// they are invisible to the writer's intent.
+// they are invisible to the writer's intent. Length is preserved so that every offset in
+// the folded text still points at the same character of the original.
 function fold(text: string) {
-  return text.normalize('NFKD')
-    .replace(/[֑-ׇ]/g, '')
-    .replace(/[̀-ͯ]/g, '')
+  return text
+    .replace(/[֑-ׇ]/g, ' ')
+    .replace(/[̀-ͯ]/g, ' ')
     .toLowerCase()
     .replace(/ё/g, 'е');
 }
 
 const NUMBER = '\\d{1,3}(?:[.,]\\d{1,2})?';
 
-// Keywords are matched as substrings of the folded text. Russian and Hebrew both inflect
-// heavily, so a stem is used rather than a whole word: "давлен" covers давление/давления,
-// "пульс" covers пульса/пульсе, "לחץ דם" covers the ordinary written forms.
+// Written word forms, not stems. A stem would silently over-match: Russian "вес" (weight)
+// is the first three letters of "весь" (whole), so "весь день" would have been read as a
+// weight. Matching whole words against an explicit list cannot do that. Hebrew attaches
+// one-letter particles to the following word, so a Hebrew form may carry up to two of them
+// - "ודופק" is "and pulse" - exactly as in packages/domain/safety.ts.
 const KEYWORDS: Record<MeasurementKind, string[]> = {
-  blood_pressure: ['blood pressure', 'pressure', 'bp', 'давлен', 'а/д', 'לחץ דם', 'לחץ'],
-  pulse: ['pulse', 'heart rate', 'heartrate', 'пульс', 'чсс', 'דופק', 'קצב לב'],
-  temperature: ['temperature', 'temp', 'температур', 'חום', 'טמפרטור'],
-  weight: ['weight', 'weigh', 'вес', 'весит', 'משקל', 'שוקל'],
-  glucose: ['glucose', 'blood sugar', 'sugar', 'глюкоз', 'сахар', 'גלוקוז', 'סוכר'],
-  oxygen: ['saturation', 'oxygen', 'spo2', 'sats', 'сатураци', 'кислород', 'סטורצי', 'חמצן'],
+  blood_pressure: ['blood pressure', 'bp', 'pressure',
+    'давление', 'давления', 'давлении', 'давлением', 'ад', 'а/д',
+    'לחץ דם', 'לחץ הדם', 'לחץ'],
+  pulse: ['pulse', 'heart rate', 'heartrate',
+    'пульс', 'пульса', 'пульсе', 'чсс',
+    'דופק', 'הדופק', 'קצב לב'],
+  temperature: ['temperature', 'temp', 'fever',
+    'температура', 'температуру', 'температуры', 'температура тела',
+    'חום', 'טמפרטורה'],
+  weight: ['weight', 'weigh', 'weighs', 'weighed',
+    'вес', 'веса', 'весе', 'весом', 'весит', 'весила', 'весил',
+    'משקל', 'המשקל', 'שוקל', 'שוקלת'],
+  glucose: ['glucose', 'blood sugar', 'sugar',
+    'глюкоза', 'глюкозы', 'глюкоза крови', 'сахар', 'сахара', 'сахар крови',
+    'גלוקוז', 'סוכר', 'הסוכר'],
+  oxygen: ['saturation', 'oxygen', 'spo2', 'sats',
+    'сатурация', 'сатурации', 'кислород', 'насыщение',
+    'סטורציה', 'סטורצית', 'חמצן', 'ריווי חמצן'],
 };
 
+const HEBREW_PREFIXES = 'והבלמשכ';
+const hebrew = (word: string) => /[֐-׿]/.test(word);
+const escape = (word: string) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// One regex per written form. Unicode letter/digit lookarounds are used rather than \b,
+// which JavaScript defines over [A-Za-z0-9_] only and which therefore never fires beside
+// Cyrillic or Hebrew.
+const keywordPatterns = new Map<string, RegExp>();
+function keywordPattern(form: string) {
+  const cached = keywordPatterns.get(form);
+  if (cached) return cached;
+  const body = form.split(' ').map(word =>
+    hebrew(word) ? `[${HEBREW_PREFIXES}]{0,2}${escape(word)}` : escape(word)).join(' ');
+  const pattern = new RegExp(`(?<![\\p{L}\\p{N}])${body}(?![\\p{L}\\p{N}])`, 'gu');
+  keywordPatterns.set(form, pattern);
+  return pattern;
+}
+
 // Written units. Each entry maps written forms to the canonical unit recorded.
-//
-// JavaScript's \b is defined over [A-Za-z0-9_] only, so it silently never matches beside
-// Cyrillic or Hebrew: /\bкг\b/ cannot fire in "вес 78 кг". Unicode letter/digit lookarounds
-// are used instead, which behave identically in all three languages.
 function unitPattern(...forms: string[]) {
   return new RegExp(`(?<![\\p{L}\\p{N}])(?:${forms.join('|')})(?![\\p{L}\\p{N}])`, 'u');
 }
 const UNITS: Record<MeasurementKind, Array<[RegExp, string]>> = {
   blood_pressure: [[unitPattern('mmhg', 'mm\\s*hg', 'мм\\s*рт\\.?\\s*ст\\.?', 'ммрт', 'ממ כספית'), 'mmHg']],
   pulse: [[unitPattern('bpm', '\\/\\s*min', 'per minute', 'уд\\.?\\s*\\/?\\s*мин\\.?', 'ударов в минуту', 'לדקה'), '/min']],
+  // Only a NAMED scale counts. "градусов" and "מעלות" mean degrees and say nothing about
+  // which scale, so they are deliberately absent from this table: 37.8 is not assumed to be
+  // Celsius and 98.6 is not assumed to be Fahrenheit. The gap becomes the one clarification.
   temperature: [
-    [unitPattern('°\\s*c', 'c', 'celsius', 'цельси\\p{L}*', 'מעלות צלזיוס'), '°C'],
-    [unitPattern('°\\s*f', 'f', 'fahrenheit'), '°F'],
+    [unitPattern('°\\s*c', 'c', 'celsius', 'цельси\\p{L}*', 'по цельсию', 'צלזיוס', 'מעלות צלזיוס'), '°C'],
+    [unitPattern('°\\s*f', 'f', 'fahrenheit', 'фаренгейт\\p{L}*', 'פרנהייט'), '°F'],
   ],
   weight: [
-    [unitPattern('kg', 'kilo\\p{L}*', 'кг', 'килограмм\\p{L}*', 'ק"ג', 'קילו'), 'kg'],
+    [unitPattern('kg', 'kilo\\p{L}*', 'кг', 'килограмм\\p{L}*', 'ק"ג', 'קג', 'קילו'), 'kg'],
     [unitPattern('lbs?', 'pounds?', 'фунт\\p{L}*'), 'lb'],
   ],
   glucose: [
@@ -109,69 +146,67 @@ const UNITS: Record<MeasurementKind, Array<[RegExp, string]>> = {
   oxygen: [[/%/u, '%']],
 };
 
-// Written as "degrees" / "градусов" / "מעלות" without naming a scale. Celsius is the scale
-// on every source document this family has, so it is filled in - but recorded as NOT stated
-// by the person, exactly like a notational unit, so the confirmation shows it as something
-// the app supplied and the Correct control can change it.
-const IMPLIED: Partial<Record<MeasurementKind, Array<[RegExp, string]>>> = {
-  temperature: [[unitPattern('градус\\p{L}*', 'מעלות'), '°C']],
-};
-
-// How far from the keyword a number may sit and still belong to it. Wide enough for
-// "blood pressure this morning was 135/80", narrow enough that the next sentence's number
-// is not captured.
+// How far from a measurement word a number may sit and still belong to it. Wide enough for
+// "blood pressure this morning was 135/80", narrow enough that the next clause's number is
+// not captured.
 const NEAR = 40;
 
-function unitNear(table: Array<[RegExp, string]> | undefined, haystack: string, from: number, to: number) {
-  if (!table) return '';
-  const window = haystack.slice(Math.max(0, from - 14), Math.min(haystack.length, to + 18));
-  for (const [pattern, unit] of table) if (pattern.test(window)) return unit;
-  return '';
-}
+interface Occurrence { kind: MeasurementKind; at: number; end: number }
 
-function keywordPositions(haystack: string, kind: MeasurementKind) {
-  const found: number[] = [];
-  for (const word of KEYWORDS[kind]) {
-    for (let from = 0; ;) {
-      const at = haystack.indexOf(word, from);
-      if (at < 0) break;
-      found.push(at);
-      from = at + 1;
+function occurrences(haystack: string): Occurrence[] {
+  const found: Occurrence[] = [];
+  for (const kind of Object.keys(KEYWORDS) as MeasurementKind[]) {
+    for (const form of KEYWORDS[kind]) {
+      const pattern = keywordPattern(form);
+      pattern.lastIndex = 0;
+      for (let match = pattern.exec(haystack); match; match = pattern.exec(haystack)) {
+        found.push({ kind, at: match.index, end: match.index + match[0].length });
+      }
     }
   }
   return found;
 }
 
-// A number belongs to a keyword when it sits within NEAR characters of it, on either side.
-function nearKeyword(positions: number[], at: number, length: number) {
-  return positions.some(position => {
-    const distance = position <= at ? at - position : position - (at + length);
-    return distance >= 0 && distance <= NEAR;
-  });
+// The gap between a measurement word and a number: the characters lying between them, on
+// whichever side the word sits. Zero when they touch.
+function gap(occurrence: Occurrence, at: number, length: number) {
+  return occurrence.end <= at ? at - occurrence.end : occurrence.at - (at + length);
 }
 
-function reading(kind: MeasurementKind, haystack: string, pattern: RegExp, fixedUnit: string): Measurement[] {
-  const positions = keywordPositions(haystack, kind);
-  if (!positions.length) return [];
-  const out: Measurement[] = [];
-  for (const match of haystack.matchAll(pattern)) {
-    const at = match.index ?? 0;
-    const text = match[0];
-    if (!nearKeyword(positions, at, text.length)) continue;
-    const written = unitNear(UNITS[kind], haystack, at, at + text.length);
-    const unit = written || unitNear(IMPLIED[kind], haystack, at, at + text.length) || fixedUnit;
-    out.push({
-      kind,
-      value: text.replace(/\s+/g, '').replace(',', '.'),
-      unit,
-      unitStated: Boolean(written),
-      // Only kinds with no notational unit can need one.
-      needsUnit: !unit,
-      text,
-      at,
-    });
+// Which measurement this number belongs to. The nearest word wins. If the nearest distance
+// is shared by words of two different kinds, the number is ambiguous and nothing is read -
+// preserving the ambiguity is the whole point, because a confirmation step cannot repair a
+// reading that was attached to the wrong label.
+function owner(all: Occurrence[], at: number, length: number): MeasurementKind | null {
+  let best = Infinity;
+  let kinds = new Set<MeasurementKind>();
+  for (const occurrence of all) {
+    const distance = gap(occurrence, at, length);
+    if (distance < 0 || distance > NEAR) continue;
+    if (distance < best) { best = distance; kinds = new Set([occurrence.kind]); }
+    else if (distance === best) kinds.add(occurrence.kind);
   }
-  return out;
+  return kinds.size === 1 ? [...kinds][0] : null;
+}
+
+function unitNear(kind: MeasurementKind, haystack: string, from: number, to: number) {
+  const window = haystack.slice(Math.max(0, from - 14), Math.min(haystack.length, to + 18));
+  for (const [pattern, unit] of UNITS[kind]) if (pattern.test(window)) return unit;
+  return '';
+}
+
+function measurement(kind: MeasurementKind, haystack: string, at: number, text: string, fixedUnit: string): Measurement {
+  const written = unitNear(kind, haystack, at, at + text.length);
+  const unit = written || fixedUnit;
+  return {
+    kind,
+    value: text.replace(/\s+/g, '').replace(',', '.'),
+    unit,
+    unitStated: Boolean(written),
+    needsUnit: !unit,
+    text,
+    at,
+  };
 }
 
 // Ordered, so a reply lists readings the way the sentence did. One reading per kind: a
@@ -179,22 +214,41 @@ function reading(kind: MeasurementKind, haystack: string, pattern: RegExp, fixed
 // with. Nothing is merged or averaged.
 export function extractMeasurements(text: string): Measurement[] {
   const haystack = fold(typeof text === 'string' ? text.slice(0, MAX_READ_CHARS) : '');
-  if (!haystack) return [];
-  const pairs = reading('blood_pressure', haystack, /\d{2,3}\s*\/\s*\d{2,3}/g, 'mmHg');
-  const found = [
-    ...pairs,
-    ...reading('pulse', haystack, /\b\d{2,3}\b/g, '/min'),
-    ...reading('temperature', haystack, new RegExp(`\\b${NUMBER}\\b`, 'g'), ''),
-    ...reading('weight', haystack, new RegExp(`\\b${NUMBER}\\b`, 'g'), ''),
-    ...reading('glucose', haystack, new RegExp(`\\b${NUMBER}\\b`, 'g'), ''),
-    ...reading('oxygen', haystack, /\b\d{2,3}\b/g, '%'),
-  ];
-  // A blood-pressure pair swallows two numbers; neither half may reappear as another kind.
-  const inPair = (m: Measurement) => m.kind !== 'blood_pressure'
-    && pairs.some(pair => m.at >= pair.at && m.at < pair.at + pair.text.length);
+  if (!haystack.trim()) return [];
+  const all = occurrences(haystack);
+  if (!all.length) return [];
+  const found: Measurement[] = [];
+
+  // A systolic/diastolic pair first. Only a blood-pressure word may claim one: nothing else
+  // is written as a pair, so the nearest-word rule is not applied to it.
+  const covered: Array<[number, number]> = [];
+  const bloodPressure = all.filter(occurrence => occurrence.kind === 'blood_pressure');
+  for (const match of haystack.matchAll(/\d{2,3}\s*\/\s*\d{2,3}/g)) {
+    const at = match.index ?? 0;
+    const near = bloodPressure.some(occurrence => {
+      const distance = gap(occurrence, at, match[0].length);
+      return distance >= 0 && distance <= NEAR;
+    });
+    // The halves are consumed either way: in "pulse 135/80" the pair is not a pulse, and
+    // neither 135 nor 80 may be read as one.
+    covered.push([at, at + match[0].length]);
+    if (near) found.push(measurement('blood_pressure', haystack, at, match[0], 'mmHg'));
+  }
+
+  // Then every remaining number, each bound to its own nearest measurement word.
+  for (const match of haystack.matchAll(new RegExp(`(?<![\\p{L}\\p{N}.,/])${NUMBER}(?![\\p{L}\\p{N}/])`, 'gu'))) {
+    const at = match.index ?? 0;
+    if (covered.some(([from, to]) => at >= from && at < to)) continue;
+    const kind = owner(all, at, match[0].length);
+    // A blood-pressure word cannot claim a single number: which half of the pair it would
+    // be is unknowable, so the number is left unread rather than recorded as half a reading.
+    if (!kind || kind === 'blood_pressure') continue;
+    found.push(measurement(kind, haystack, at, match[0], kind === 'pulse' ? '/min' : ''));
+  }
+
   const first = new Map<MeasurementKind, Measurement>();
-  for (const m of found.filter(m => !inPair(m)).sort((a, b) => a.at - b.at)) {
-    if (!first.has(m.kind)) first.set(m.kind, m);
+  for (const reading of found.sort((a, b) => a.at - b.at)) {
+    if (!first.has(reading.kind)) first.set(reading.kind, reading);
   }
   return [...first.values()].sort((a, b) => a.at - b.at);
 }
@@ -221,7 +275,7 @@ const TIME_PHRASES: Array<[string, ReportedTime['day'], ReportedTime['partOfDay'
 // The longest matching phrase wins, so "yesterday morning" is not read as "yesterday".
 export function extractTime(text: string): ReportedTime | null {
   const haystack = fold(typeof text === 'string' ? text.slice(0, MAX_READ_CHARS) : '');
-  if (!haystack) return null;
+  if (!haystack.trim()) return null;
   let best: ReportedTime | null = null;
   let bestLength = 0;
   for (const [phrase, day, partOfDay] of TIME_PHRASES) {
@@ -243,5 +297,5 @@ export function missingUnit(measurements: Measurement[]): Measurement | undefine
   return measurements.find(m => m.needsUnit);
 }
 
-// Exposed so tests and a reviewer can read exactly what is recognised.
-export const vocabulary = { keywords: KEYWORDS, units: UNITS, implied: IMPLIED, times: TIME_PHRASES };
+// Exposed so tests and a reviewer can see exactly what is recognised.
+export const vocabulary = { keywords: KEYWORDS, units: UNITS, times: TIME_PHRASES, near: NEAR };

@@ -44,15 +44,43 @@ and are not registered in Supabase CLI migration history, so apply these the sam
 If a migration fails part-way it is inside a transaction and rolls back completely; fix the
 reported error and run the whole file again rather than running fragments of it.
 
-## After applying, the journey that still needs a signed-in person
+Migration 007 was **revised on 2026-09-21**, after the independent review and before it had
+ever been applied anywhere, to add `client_token` and `post_conversation_turn`. If you took a
+copy of the file before that date, discard it and use the one in the repository.
 
-This is the one acceptance test nobody has run against the live project, because it needs the
-account holders' own passwords. Do not put a password in a chat message; type it into the
-sign-in screen yourself.
+## After applying: run the acceptance suite
+
+The signed-in journey is now an executable test rather than a checklist. It covers sign-in, a
+Russian measurement message, Confirm, Correct, decline, an attachment, a fault-injected
+connection loss with Retry, and retrieval by the second account.
+
+```
+set MED_ASSISTANT_TEST_PATIENT_ID=<the record to write into>
+set MED_ASSISTANT_TEST_PATIENT_EMAIL=...
+set MED_ASSISTANT_TEST_PATIENT_PASSWORD=...
+set MED_ASSISTANT_TEST_CAREGIVER_EMAIL=...
+set MED_ASSISTANT_TEST_CAREGIVER_PASSWORD=...
+npm run test:acceptance
+```
+
+Set those in your own shell. Do not write them into a file in the repository, and do not put
+a password in a chat message. With any of them missing all seven cases **skip** — a skipped
+acceptance test proves nothing and must be reported as not run.
+
+Point it at a **synthetic** patient record if you have one. It writes conversation lines into
+whatever record you name, and a conversation line cannot be deleted by the application; that
+is deliberate, and it is why the choice of record matters.
+
+## The same journey by hand
+
+Useful for judging whether it actually feels right to use, which no test can tell you. Do not
+put a password in a chat message; type it into the sign-in screen yourself.
 
 1. Sign in and land on the conversation.
-2. Type, in Russian: `Сегодня утром давление 135/80, пульс 72`.
-   The reply should say what it read, and show two small confirmations.
+2. Type, in Russian: `Сегодня утром давление 135/80, пульс 72, вес 80 кг`.
+   The reply should say what it read, and show three separate confirmations — pressure
+   135/80, pulse 72, weight 80. Check each number sits against its own label: an earlier
+   version recorded the weight's 80 as the pulse.
 3. Press **Confirm** on the blood pressure and **Correct** on the pulse; change the value and
    save. Check that the state changes to confirmed and corrected.
 4. Attach a PDF. Watch for "sending the file", then "file uploaded", and check that the reply

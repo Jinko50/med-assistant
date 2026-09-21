@@ -1,5 +1,52 @@
 # Standalone readiness — 2026-09-19
 
+Update 2026-09-21 (Claude Code, after the independent review in
+docs/CHAT_INDEPENDENT_REVIEW.md): **the release stays held.** The review's two P1 parser
+defects were real, reproduced, and are fixed; so are the two P1 honesty defects and the
+three P2 robustness defects. Its six regression tests now pass, and its findings have been
+turned into tests of their own so they cannot come back.
+
+| Review finding | Severity | State |
+|---|---|---|
+| Different measurements borrow the same number | P1 | **Fixed.** Each number now binds to its own nearest measurement word; a tie between two different words is ambiguous and nothing is read. |
+| An unspecified temperature scale becomes Celsius | P1 | **Fixed.** "градусов" / "מעלות" / "degrees" leave the scale unknown and raise the one clarification. My own test that endorsed the guess was corrected, not cited. |
+| `aiOff` claims nothing leaves this computer | P1 | **Fixed.** Storage and AI transmission are now two separate sentences in all three languages; the conversation always says it is kept in the family's private online record. |
+| "I am reading it now" with a provider configured | P1 | **Fixed.** The claim is deleted. An attachment is described as stored and explicitly not read, whatever is configured, until a reader exists. |
+| Retry can resend uploaded bytes | P2 | **Fixed.** The document id is recorded when the bytes arrive, not after verification, so a retry resumes at verification. |
+| Network failure can leave controls stuck | P2 | **Fixed.** The composer is a pure state machine (`packages/domain/turn.ts`); every terminal event returns it to idle, and both network calls have `try`/`catch`. |
+| Partial persistence and duplicate retries | P2 | **Fixed.** One turn is one transaction: `post_conversation_turn` writes the message, the reply and the readings together, keyed by a browser token so a retry completes the turn instead of duplicating it. A reading that cannot be stored now aborts the turn instead of vanishing. |
+
+Two of those fixes changed behaviour that earlier tests asserted. Both tests were wrong and
+were corrected rather than cited as evidence: the Celsius assumption, and the claim that a
+configured provider implies an attachment is being read.
+
+Migration 007 was **revised before ever being applied** — a read-only check confirmed the
+live project does not have its tables — to add `client_token` and `post_conversation_turn`.
+Discard any copy taken before today.
+
+Checks executed for this change: **123 unit** (including 14 new behavioural tests of the
+retry/failure state machine and 6 new measurement-binding tests), **47 SQL** (including 5 new
+atomicity and idempotency tests), the review's **6 regression tests**, **18 browser**, 52
+consistency checks, typecheck, clean build, 0 dependency vulnerabilities.
+
+**Still not run, and not claimed:** the signed-in acceptance run. It is now written and
+executable — `tests/acceptance/authenticated-chat.spec.ts`, `npm run test:acceptance` —
+covering sign-in, a Russian measurement message, Confirm, Correct, decline, attachment,
+fault-injected connection loss with Retry, and retrieval by the second account. With no
+credentials in the environment all seven cases **skip**, which is what they do today: a
+skipped acceptance test is evidence of nothing. It needs migrations 006/007 applied and the
+account holders' own passwords, typed by them into their own shell.
+
+Also still unimplemented, and not to be described otherwise: document and photo reading,
+output checking on generated answers, and personalized AI guidance. Configuring a provider
+key does not create any of them.
+
+Independent review 2026-09-21 of `106614a`: **release held**. Existing suites pass, but six
+new behavioral regressions fail: mixed measurements borrow the wrong numbers and an
+unstated temperature scale is assumed. Migrations 006/007 are still pending live.
+See `docs/CHAT_INDEPENDENT_REVIEW.md` for results, coverage limits and additional findings.
+Run `node --test tests/review/chat-release.test.ts` alongside the existing suites.
+
 Update 2026-09-21 (Claude Code, milestone 10): **the conversation is now the product.** The
 separate daily home screen and the structured check-in form are no longer the main path;
 `/[locale]/records/[patientId]/chat` is where signing in lands, and it shows only the
@@ -119,11 +166,11 @@ The historical rows below do not constitute patient-use approval.
 | Caregiver record/reconciliation UI | apps/web/components/record-form.tsx | Build and readonly preview browser tests | PARTIAL | Real provider form save and reconciliation UI unverified/incomplete |
 | Patient mobile/accessible RU/HE/EN/RTL interface | apps/web/components (conversation, composer, confirmation cards); i18n; CSS; admin/register/document pages | Desktop/mobile browser and RTL tests; tests/unit/i18n.test.ts; packaged-ZIP smoke test asserts RU/HE rendering, lang/dir, language links and LTR email fields | PARTIAL | Real login, screen-reader/elderly usability, voice, final contrast review |
 | Deterministic emergency / medication engine | packages/domain/safety.ts; packages/domain/reply.ts; conversation and check-in actions | 30 adversarial unit tests across RU/HE/EN (negation, history, Hebrew prefixes, truncation); 15 reply-ordering tests; the screen's decision is stored per message for audit | PARTIAL | Recognition remains a residual risk — `none` means nothing matched, never "safe". Phrase catalogue and escalation wording are still **unreviewed by a clinician or pharmacist** (B-01/B-02) |
-| AI provider orchestration and bounded retrieval | apps/web/lib/assistant.ts; apps/web/app/conversation-actions.ts | 14 structural tests assert the order (authorize → screen → read → plan → store → model) against the stripped source, that only `confirmed`/`corrected` facts are sent as grounding, that context is labelled as data not instructions, and that both the configuration and consent gates are required | PARTIAL | **No provider is configured, so no model has ever been called and no generated answer has been observed.** Document and photo reading do not exist; output guards, per-patient consent capture and provider fault injection are unwritten |
+| AI provider orchestration and bounded retrieval | apps/web/lib/assistant.ts; apps/web/app/conversation-actions.ts | 15 structural tests assert the order (authorize → screen → read → plan → store → model) against the stripped source, that only `confirmed`/`corrected` facts are sent as grounding, that context is labelled as data not instructions, and that both the configuration and consent gates are required | FAIL | **No provider is configured, so no model has ever been called and no generated answer has been observed.** Document and photo reading do not exist and configuring a key does not create them; output guards, per-patient consent capture and provider fault injection are unwritten |
 | Secure documents and extraction/review | migrations 003-004; documents pages/actions; direct signed-URL upload | 43 unit tests incl. exact size boundaries, retry and interruption handling; 4 SQL storage/size tests; request and CSP probe against both the built and the packaged app; live private bucket verified | FAIL | **The repaired path has still not been retested by a signed-in upload/download.** Migration 004 is not yet applied to the live project, so >10 MiB is still refused there. Supported cap is now 50 MB once it is applied. Malware scanning, resumable transfer, candidate-only extraction and review |
 | Audit/version history/concurrent edits | SQL save_record/revisions/audit; history route | PGlite stale-version and audit-failure rollback tests | PARTIAL | Live multi-session test, history pagination and source-rich historical view |
 | Executable clinical scenarios / actual outputs | Historical tests/EXECUTION_LOG.md; new inventory | No new model execution | PARTIAL | Full harness, trustworthy captures, 2 historical FAILs and 7 unrun parents |
-| Integration / end-to-end tests | tests/integration; tests/e2e | 102 unit, 41 SQL and 18 browser tests run locally; the conversation journey (propose → review → retrieve later, across accounts) runs against the real migration SQL in PGlite | PARTIAL | The journey has **not** been run over HTTP against the live project: migrations 006/007 are unapplied and signing in needs the account holders' own passwords |
+| Integration / end-to-end tests | tests/integration; tests/e2e; tests/acceptance; tests/review | 123 unit, 47 SQL, 18 browser and the independent reviewer's 6 regression tests run locally; the conversation journey (propose → review → retrieve later, across accounts) runs against the real migration SQL in PGlite | PARTIAL | The 7-case signed-in acceptance suite exists and is runnable (`npm run test:acceptance`) but **skips today**: migrations 006/007 are unapplied and signing in needs the account holders' own passwords |
 | Dependency and operational failure behavior | Implementation plan | No fault injection | FAIL | Provider, DB, storage, extraction, session, migration and edit failures |
 | Secrets protection and security scanning | .gitignore; npm lock; transfer scanner | Dependency audit and narrow known-pattern scans | PARTIAL | Full secret/privacy review and deployed security hardening |
 | Reproducible app build and checks | package/lock; setup scripts; CI | Local build, typecheck, unit, SQL, browser checks | PASS | Remote CI and destination setup still need execution |

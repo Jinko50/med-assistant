@@ -41,16 +41,19 @@ test('a medication question is routed to a person, above an urgent match', () =>
   assert.equal(result.parts[0], 'safetyMedication');
 });
 
-test('"uploaded" and "read" are different statements', () => {
-  const stored = plan('', { attachment: 'stored', hasText: false });
-  assert.ok(stored.parts.includes('replyAttachmentStored'));
-  assert.ok(stored.parts.includes('replyAttachmentNotRead'),
-    'a stored file must not be described as read while no reader exists');
-  assert.ok(!stored.parts.includes('replyAttachmentQueued'));
-
-  const withReader = plan('', { attachment: 'stored', hasText: false, assistantAvailable: true });
-  assert.ok(withReader.parts.includes('replyAttachmentQueued'));
-  assert.ok(!withReader.parts.includes('replyAttachmentNotRead'));
+test('"uploaded" and "read" are different statements, whatever is configured', () => {
+  // Corrected after the independent review of 2026-09-21. An earlier version switched to
+  // "I am reading it now" as soon as a provider was configured. There is no document
+  // reader and no processing job anywhere in this application, so configuring an API key
+  // does not make that true. The claim is gone until a reader actually exists.
+  for (const assistantAvailable of [false, true]) {
+    const stored = plan('', { attachment: 'stored', hasText: false, assistantAvailable });
+    assert.ok(stored.parts.includes('replyAttachmentStored'));
+    assert.ok(stored.parts.includes('replyAttachmentNotRead'),
+      'a stored file must never be described as read');
+    assert.equal(stored.parts.includes('replyAttachmentQueued'), false,
+      'nothing may claim to be reading an attachment');
+  }
 });
 
 test('a failed upload says nothing was stored', () => {
@@ -110,6 +113,7 @@ test('every key a plan can emit exists in all three languages', () => {
     ['pulse 72', {}], ['temperature 37.8', {}], ['hello', {}], ['hello', { assistantAvailable: true }],
     ['', { attachment: 'stored', hasText: false }],
     ['', { attachment: 'stored', hasText: false, assistantAvailable: true }],
+    ['pulse 72', { attachment: 'stored' }],
     ['x', { attachment: 'failed' }], [`pulse 72 ${'x'.repeat(5000)}`, {}],
   ];
   for (const [text, over] of inputs) for (const key of plan(text, over).parts) emitted.add(key);

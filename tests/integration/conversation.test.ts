@@ -224,3 +224,73 @@ test('a confirmed reading is retrieved correctly in a later conversation', async
   const records = await db.query<{ count: number | string }>('select count(*) count from public.medical_records');
   assert.equal(Number(records.rows[0].count), 0);
 });
+
+// One turn is one transaction, and a retry is harmless. Added after the independent review
+// of 2026-09-21, which found that the person's message, the reply and the facts were three
+// separate writes: a failure between them stored a question with no answer, and pressing
+// Retry stored the question a second time.
+const TOKEN_A = '70000000-0000-4000-8000-0000000000aa';
+const TOKEN_B = '70000000-0000-4000-8000-0000000000bb';
+const post = (token: string, body: string, reply: string, facts: unknown[] = [], as = pid) =>
+  db.query('select public.post_conversation_turn($1,$2,$3,$4,null,$5,$6,$7::jsonb) result',
+    [as, 'ru', token, body, 'none', reply, JSON.stringify(facts)]);
+
+test('a turn stores the message, the reply and the readings together', async () => {
+  await asUser(patient);
+  const result = await post(TOKEN_A, 'Пульс 72', 'Вот что я прочитал:',
+    [{ kind: 'pulse', value: '72', unit: '/min', unit_stated: false, reported_when: 'сегодня' }]);
+  const turn = (result.rows[0] as { result: { person: { id: string; body: string }; assistant: { body: string }; facts: Array<{ kind: string; state: string }> } }).result;
+  assert.equal(turn.person.body, 'Пульс 72');
+  assert.equal(turn.assistant.body, 'Вот что я прочитал:');
+  assert.deepEqual(turn.facts.map(f => [f.kind, f.state]), [['pulse', 'proposed']]);
+});
+
+test('retrying the same turn returns the same rows instead of duplicating it', async () => {
+  await asUser(patient);
+  const before = await db.query<{ count: string }>(
+    "select count(*) count from public.conversation_messages where client_token=$1", [TOKEN_A]);
+  const again = await post(TOKEN_A, 'Пульс 72', 'Вот что я прочитал:',
+    [{ kind: 'pulse', value: '72', unit: '/min', unit_stated: false, reported_when: 'сегодня' }]);
+  const turn = (again.rows[0] as { result: { facts: unknown[] } }).result;
+  const after = await db.query<{ count: string }>(
+    "select count(*) count from public.conversation_messages where client_token=$1", [TOKEN_A]);
+  assert.equal(Number(after.rows[0].count), Number(before.rows[0].count),
+    'a retry must not store the message twice');
+  assert.equal(turn.facts.length, 1, 'nor propose the same reading twice');
+});
+
+test('a turn whose reading cannot be stored stores nothing at all', async () => {
+  await asUser(patient);
+  // 'walking' is not one of the documented measurement kinds, so the fact insert fails.
+  await assert.rejects(post(TOKEN_B, 'Я прошёл 2000 шагов', 'Хорошо.',
+    [{ kind: 'walking', value: '2000' }]), /violates check constraint/);
+  const orphan = await db.query<{ count: string }>(
+    'select count(*) count from public.conversation_messages where client_token=$1', [TOKEN_B]);
+  assert.equal(Number(orphan.rows[0].count), 0,
+    'a failed reading must not leave the message stored without its reply');
+});
+
+test('a turn needs a token, and current access to the record', async () => {
+  await asUser(patient);
+  await assert.rejects(db.query(
+    'select public.post_conversation_turn($1,$2,null,$3,null,$4,$5,$6::jsonb)',
+    [pid, 'ru', 'hi', 'none', 'hello', '[]']), /A turn needs a token/);
+  await asUser(outsider);
+  await assert.rejects(post('70000000-0000-4000-8000-0000000000cc', 'hi', 'hello'), /Access denied/);
+});
+
+test('an assistant line lost mid-turn is completed by the retry, not duplicated', async () => {
+  // Simulates the exact half-failure: the person's row exists, the reply does not.
+  await db.exec('reset role');
+  const token = '70000000-0000-4000-8000-0000000000dd';
+  await db.query(
+    `insert into public.conversation_messages(patient_id,author_id,role,locale,body,client_token)
+     values($1,$2,'person','ru','Вес 80 кг',$3)`, [pid, patient, token]);
+  await asUser(patient);
+  const result = await post(token, 'Вес 80 кг', 'Вот что я прочитал:');
+  const turn = (result.rows[0] as { result: { assistant: { body: string } } }).result;
+  assert.equal(turn.assistant.body, 'Вот что я прочитал:', 'the missing reply is written');
+  const rows = await db.query<{ count: string }>(
+    "select count(*) count from public.conversation_messages where client_token=$1 and role='person'", [token]);
+  assert.equal(Number(rows.rows[0].count), 1, 'the person’s message stays single');
+});

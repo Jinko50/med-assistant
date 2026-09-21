@@ -602,7 +602,9 @@ The main screen is one surface. `/home` is a redirect, so existing bookmarks and
 "Never invent units, dates or medical facts" cannot be a convention; it has to be a property of the data structure, or it erodes the first time a screen needs something to display. 37.8 is overwhelmingly likely to be Celsius and 98.6 Fahrenheit — which is exactly why guessing is tempting and exactly why it must not happen in a record a clinician may later read.
 
 **IMPACT:**
-A missing unit becomes the one short clarification the reply is permitted to ask, so the gap is visible rather than papered over. The confirmation card states who supplied the unit. A bare "degrees"/"градусов"/"מעלות" is filled in as °C but marked as supplied by the app, so the Correct control can change it.
+A missing unit becomes the one short clarification the reply is permitted to ask, so the gap is visible rather than papered over. The confirmation card states who supplied the unit.
+
+**SUPERSEDED IN PART, 2026-09-21, by D-48.** This entry originally ended by saying that a bare "degrees"/"градусов"/"מעלות" is filled in as °C and marked as supplied by the app. The independent review rejected that, correctly: it is an inference about which scale the writer meant, which is the exact thing the rest of this decision forbids. The scale now stays unknown.
 
 ---
 
@@ -642,4 +644,83 @@ The conversation reports an attachment as `chatUploadSending` → `chatUploadSto
 
 **IMPACT:**
 A test asserts the two strings differ in all three languages and that the failure path returns before the draft is cleared. Re-uploading 40 MB after a failed send cannot happen.
+
+---
+
+## D-48 — "Degrees" does not mean Celsius
+
+**DECISION:**
+The IMPLIED table is deleted. `температура 37.8 градусов`, `חום 37.8 מעלות` and `temperature 98.6 degrees` all produce a temperature with **no** unit and `needsUnit: true`. Only a named scale — `°C`, `C`, `celsius`, `цельси…`, `по цельсию`, `צלזיוס`, or the Fahrenheit equivalents — sets one. This partly supersedes D-44.
+
+**REASON:**
+The independent review of 2026-09-21 called this what it is: a guess. My reasoning had been that Celsius is the scale on every document this family owns, and that filling it in while marking it as app-supplied was honest enough. That is an argument about likelihood, and the rule is not about likelihood — a number written into a medical record with a unit nobody wrote is a fabricated unit however it is labelled. It also fails on its own terms: `98.6 градусов` was recorded as `98.6 °C`, a temperature incompatible with life.
+
+**IMPACT:**
+An unscaled temperature now spends the turn's single clarification on the question "what unit was that?", which is exactly what that budget is for. The unit test that asserted the old behaviour was corrected rather than cited: a test that encodes a defect is evidence of the defect, not of safety.
+
+---
+
+## D-49 — Every number binds to its own label, and a tie reads nothing
+
+**DECISION:**
+`extractMeasurements` finds all measurement words, then binds each number to the **nearest** one. When the nearest distance is shared by words of two different kinds the number is ambiguous and is discarded. A blood-pressure word may claim only a `n/m` pair, never a lone number. Measurement words are matched as whole written forms from an explicit list, not as stems.
+
+**REASON:**
+The previous rule — accept any number within 40 characters of a keyword, then keep the first per kind — let two measurements claim the same number. "weight 80 kg, pulse 72" recorded a pulse of 80 and lost the 72 entirely. A confirmation card cannot repair this: it shows "Pulse: 80 /min", which is a plausible pulse, so a person confirms it. The review step protects against a reading the person can *see* is wrong, not against one that looks right.
+Stem matching had the same shape of flaw: Russian "вес" (weight) opens "весь" (whole), so "весь день" was a weight.
+
+**IMPACT:**
+Nine mixed EN/RU/HE sentences are now asserted in the normal suite, alongside the reviewer's five. An ambiguous sentence yields nothing, which is a silence the person can correct by rewriting — unlike a confident wrong label, which they cannot.
+
+---
+
+## D-50 — One turn is one transaction, keyed by a token the browser keeps
+
+**DECISION:**
+`post_conversation_turn` writes the person's message, the assistant's reply and the proposed readings in a single transaction. The browser mints a uuid per turn and keeps it across retries; a repeated token returns the existing rows, and completes anything missing, instead of inserting again. A reading that violates a constraint aborts the whole turn.
+
+**REASON:**
+Three separate writes can half-succeed. The observed failure modes were: a question stored with no answer beside it, a retry storing the question a second time, and a failed fact insert being swallowed so the reply said "this is what I read" with nothing to confirm. The last is the worst of the three, because it is invisible.
+
+**IMPACT:**
+There is no partial state left to report, so the honest report is simply success or failure. Five SQL tests cover it, including one that reconstructs the half-written turn directly and checks that the retry completes rather than duplicates it. Migration 007 was revised in place, having never been applied anywhere — verified read-only against the live project first.
+
+---
+
+## D-51 — The composer's rules live in a state machine, not in component state
+
+**DECISION:**
+`packages/domain/turn.ts` is a pure reducer holding the draft, the attachment's two-stage upload state, the turn's token, the phase and the failure. The React component performs network steps and reports outcomes to it. The upload's document id is recorded when the **bytes arrive**, not after verification.
+
+**REASON:**
+The independent review found three defects here that no source-string assertion could have caught: a verification failure restarted a 40 MB upload from zero, a transport rejection could leave the controls disabled forever, and the rules were spread across six pieces of component state. Behaviour that matters this much has to be testable as behaviour.
+
+**IMPACT:**
+Fourteen behavioural tests, each phrased as the thing that must not happen to a person: the message must survive, the file must not be sent twice, Send must come back. The structural test that previously asserted on these strings now only checks that the component uses the machine rather than keeping a second copy of the rules.
+
+---
+
+## D-52 — Where it is stored and whether AI sees it are two different sentences
+
+**DECISION:**
+`privacyStorage` is shown always: messages and attachments are kept in the family's private online record, on the service that already holds the medical record, readable by the family accounts. `aiOff` now says only that nothing is sent to an outside assistant company. `aiOn` says what is additionally sent, and to whom. The "I am reading it now" line is deleted outright.
+
+**REASON:**
+`aiOff` said "nothing you write here leaves this computer". That was false the moment it was written — every message is persisted to hosted Supabase and every attachment to hosted Storage — and it was false in the direction that matters, because it invited someone to type something they would not have typed into a cloud service. The attachment line was false in the same direction: configuring an API key does not implement reading a PDF, and there is no reader and no processing job anywhere in this application.
+
+**IMPACT:**
+Both corrections are in all three languages. The acceptance suite asserts that the storage sentence is present and that "leaves this computer" appears nowhere.
+
+---
+
+## D-53 — The signed-in acceptance run is written, and reports itself as not run
+
+**DECISION:**
+`tests/acceptance/authenticated-chat.spec.ts` with `npm run test:acceptance` covers sign-in, a Russian measurement message, Confirm, Correct, decline, an attachment, fault-injected connection loss with Retry, and retrieval by the second account. Credentials come from environment variables the operator sets in their own shell. Without them every case **skips**.
+
+**REASON:**
+The owner asked for these tests and they are the last acceptance gate, but they cannot be executed here: they need migrations 006/007 applied and the account holders' own passwords, which must never be typed into a chat window. Writing them so they skip rather than pass means the suite can never be mistaken for evidence it has run.
+
+**IMPACT:**
+Seven cases, currently seven skips. A separate Playwright config is needed because the existing one deliberately starts the app with no backend in order to test the anonymous and unconfigured paths.
 

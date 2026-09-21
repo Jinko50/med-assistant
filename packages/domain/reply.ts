@@ -59,9 +59,13 @@ export function planReply(input: ReplyInput): ReplyPlan {
   if (attachment === 'failed') parts.push('replyAttachmentFailed');
   if (attachment === 'stored') {
     parts.push('replyAttachmentStored');
-    // Stored is not read. This build has no document reader, so it says that plainly
-    // rather than implying the contents are now known.
-    parts.push(assistantAvailable ? 'replyAttachmentQueued' : 'replyAttachmentNotRead');
+    // Stored is not read, and it is not read whether or not a model service is configured.
+    // There is no document reader and no processing job anywhere in this application, so
+    // there is nothing an attachment could be queued FOR. An earlier version said "I am
+    // reading it now" as soon as a provider was configured, which the independent review of
+    // 2026-09-21 correctly called a false claim: supplying an API key does not implement
+    // reading a PDF. This line stays unconditional until a reader actually exists.
+    parts.push('replyAttachmentNotRead');
   }
 
   // A safety match ends the reply. Nothing routine is appended, and no question is asked.
