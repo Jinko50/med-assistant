@@ -2,12 +2,13 @@ import type { NextConfig } from 'next';
 const config: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
-  // Both limits must exceed MAX_DOCUMENT_BYTES (10 MiB) to leave room for multipart
-  // framing. proxyClientMaxBodySize defaults to exactly 10 MiB, and a body over it is
-  // silently TRUNCATED rather than refused: the multipart payload then fails to parse
-  // ("expected boundary after body"), which throws outside the server action's
-  // try/catch and renders a full-page server error. Verified by probing a built server
-  // with synthetic bodies at 9/10/11 MiB before and after this setting.
+  // Documents no longer travel through this server: the browser uploads them straight to
+  // Supabase Storage with a signed URL, so these limits bound only small metadata calls.
+  // They are still raised above the 10 MiB default because a body over
+  // proxyClientMaxBodySize is silently TRUNCATED rather than refused, the truncated
+  // multipart payload then fails to parse ("expected boundary after body"), and that
+  // throws outside any action's try/catch — which is exactly how the family's upload
+  // became a full-page server error. Verified by probing a built server at 9/10/11 MiB.
   // Keep in step with MAX_UPLOAD_REQUEST_BYTES in packages/domain/document.ts.
   experimental: { serverActions: { bodySizeLimit: '12mb' }, proxyClientMaxBodySize: '12mb' },
   async headers() {
@@ -17,7 +18,10 @@ const config: NextConfig = {
       { key: 'Referrer-Policy', value: 'no-referrer' },
       { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
       { key: 'Cache-Control', value: 'private, no-store, max-age=0' },
-      { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self' 'unsafe-inline'" + (process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : '') + "; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'" },
+      // Content-Security-Policy is set in proxy.ts instead. Documents are uploaded by the
+      // browser straight to Supabase Storage, so connect-src must name that project's
+      // origin, and the origin is only known at runtime from app-config.json. A value
+      // baked in here at build time would be wrong for any other project.
     ] }];
   },
 };

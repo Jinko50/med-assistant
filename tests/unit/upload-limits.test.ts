@@ -2,99 +2,170 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  documentType, uploadRejection, MAX_DOCUMENT_BYTES, MIN_DOCUMENT_BYTES, MAX_UPLOAD_REQUEST_BYTES,
+  documentType, uploadRejection, storagePath,
+  MAX_DOCUMENT_BYTES, MIN_DOCUMENT_BYTES, MAX_UPLOAD_REQUEST_BYTES, HEADER_SAMPLE_BYTES,
 } from '../../packages/domain/document.ts';
 import { locales, translations } from '../../apps/web/lib/i18n.ts';
 
 // The reported live failure: a real upload produced a full-page server error instead of a
-// readable message. The submitted file was far larger than the supported maximum, and a
-// body that large is rejected while the request is parsed — before the server action runs
-// and outside its try/catch. Every case below uses synthetic sizes and synthetic bytes.
-// The family's actual document is never read, stored or transmitted by these tests.
+// readable message. The submitted file was far larger than the then-supported maximum, and
+// a body that large is TRUNCATED while the request is parsed — before the server action
+// runs and outside its try/catch.
+//
+// The cap has since been raised to 50 MB at the owner's request, and documents now go from
+// the browser straight to Storage instead of through this server. Every case below uses
+// synthetic sizes and synthetic bytes. The family's actual document is never read, stored
+// or transmitted by these tests.
 
 const REPORTED_FAILURE_BYTES = 40_844_643;
+const DOCUMENT_ACTIONS = readFileSync('apps/web/app/document-actions.ts', 'utf8');
+const UPLOAD_COMPONENT = readFileSync('apps/web/components/document-upload.tsx', 'utf8');
 
-test('the reported oversized upload is refused, and refusal names the size limit', () => {
-  assert.ok(REPORTED_FAILURE_BYTES > MAX_DOCUMENT_BYTES,
-    'the reported file must exceed the cap; otherwise size was not the cause');
-  assert.equal(uploadRejection(REPORTED_FAILURE_BYTES), 'tooLarge');
-  // Refusing it is not the same as supporting it. 10 MiB remains the supported maximum.
-  assert.equal(MAX_DOCUMENT_BYTES, 10 * 1024 * 1024);
+test('the size that previously failed is now supported, unchanged', () => {
+  assert.equal(MAX_DOCUMENT_BYTES, 50_000_000, 'the supported maximum is 50 MB');
+  assert.ok(REPORTED_FAILURE_BYTES < MAX_DOCUMENT_BYTES,
+    'the reported original must now fit, or the owner still cannot upload it');
+  assert.equal(uploadRejection(REPORTED_FAILURE_BYTES), null);
+  // Headroom is real, not marginal: the file is about 8 MB below the cap.
+  assert.ok(MAX_DOCUMENT_BYTES - REPORTED_FAILURE_BYTES > 8_000_000);
 });
 
-test('exactly the supported size is accepted and reaches validation', () => {
-  assert.equal(uploadRejection(MAX_DOCUMENT_BYTES), null, 'a maximum-size file must be allowed through');
+test('boundary sizes are decided exactly', () => {
+  assert.equal(uploadRejection(MAX_DOCUMENT_BYTES), null, 'a maximum-size file must be allowed');
   assert.equal(uploadRejection(MAX_DOCUMENT_BYTES - 1), null);
   assert.equal(uploadRejection(MAX_DOCUMENT_BYTES + 1), 'tooLarge');
   assert.equal(uploadRejection(MIN_DOCUMENT_BYTES), null);
   assert.equal(uploadRejection(MIN_DOCUMENT_BYTES - 1), 'chooseFile');
   assert.equal(uploadRejection(0), 'chooseFile');
   assert.equal(uploadRejection(Number.NaN), 'chooseFile');
+  assert.equal(uploadRejection(Number.POSITIVE_INFINITY), 'chooseFile');
 });
 
-// A maximum-size file is sent with multipart framing on top of it. If the framework's
-// limits equal the cap, a legitimate maximum-size upload fails before any of our code runs.
-test('framework request limits leave room above the supported document size', () => {
-  assert.ok(MAX_UPLOAD_REQUEST_BYTES > MAX_DOCUMENT_BYTES,
-    'the request limit must exceed the document cap to allow multipart overhead');
+test('the database ceiling and the application cap are the same number', () => {
+  const migration = readFileSync('database/migrations/004_large_documents.sql', 'utf8');
+  assert.match(migration, new RegExp(`check\\(bytes between 1 and ${MAX_DOCUMENT_BYTES}\\)`),
+    'the metadata constraint must equal MAX_DOCUMENT_BYTES');
+  assert.match(migration, new RegExp(`file_size_limit=${MAX_DOCUMENT_BYTES}`),
+    'the bucket ceiling must equal MAX_DOCUMENT_BYTES, or Storage refuses files the app accepted');
+  // Compare statements, not the prose explaining what the migration avoids.
+  const statements = migration.replace(/^\s*--.*$/gm, '');
+  assert.ok(!/drop\s+table|truncate|delete\s+from|drop\s+policy|drop\s+schema/i.test(statements),
+    'the migration must be additive only');
+  assert.match(migration, /public=false/, 'the bucket must be asserted private');
+});
+
+// A 50 MB body cannot be sent through a server action, which is why the transfer is direct.
+test('large documents do not travel through the framework request path', () => {
+  assert.ok(MAX_DOCUMENT_BYTES > MAX_UPLOAD_REQUEST_BYTES,
+    'a document larger than the request limit proves the upload cannot be proxied');
   const config = readFileSync('apps/web/next.config.ts', 'utf8');
-  assert.match(config, /proxyClientMaxBodySize:\s*'12mb'/,
-    'Next defaults proxyClientMaxBodySize to exactly 10 MiB and truncates larger bodies, '
-    + 'which makes a maximum-size upload fail multipart parsing outside the action');
+  // Still above Next's 10 MiB default, because a body over it is truncated rather than
+  // refused, which is what produced the original full-page error.
+  assert.match(config, /proxyClientMaxBodySize:\s*'12mb'/);
   assert.match(config, /bodySizeLimit:\s*'12mb'/);
-  // '12mb' is 12 MiB, and must match MAX_UPLOAD_REQUEST_BYTES.
   assert.equal(MAX_UPLOAD_REQUEST_BYTES, 12 * 1024 * 1024);
+  // The action must never receive the file itself.
+  assert.ok(!/form\.get\('file'\)/.test(DOCUMENT_ACTIONS),
+    'the server action must not accept the file; only metadata crosses this boundary');
+  assert.match(DOCUMENT_ACTIONS, /createSignedUploadUrl/, 'the browser must upload with a signed URL');
 });
 
-test('an oversized synthetic PDF is rejected on size before its bytes are examined', () => {
-  // Synthetic: a valid PDF header, declared at a size beyond the cap.
-  const header = Buffer.from('%PDF-1.3\n');
-  assert.equal(documentType(header), 'application/pdf', 'the synthetic sample is a valid PDF');
-  assert.equal(uploadRejection(REPORTED_FAILURE_BYTES), 'tooLarge',
-    'size alone must refuse it, without reading or buffering the content');
-  // Content-based validation also refuses oversized buffers, as a second line of defence.
-  assert.equal(documentType(Buffer.alloc(MAX_DOCUMENT_BYTES + 1)), null);
+test('only a small header sample is sent for format checking', () => {
+  assert.equal(HEADER_SAMPLE_BYTES, 4096);
+  assert.ok(HEADER_SAMPLE_BYTES * 2 < MAX_UPLOAD_REQUEST_BYTES,
+    'the base64 header must stay far below the request limit');
+  assert.match(UPLOAD_COMPONENT, /subarray\(0,HEADER_SAMPLE_BYTES\)/, 'only the first bytes are sent');
 });
 
-test('the browser refuses an oversized file without sending a request', () => {
-  const source = readFileSync('apps/web/components/document-upload.tsx', 'utf8');
-  assert.match(source, /uploadRejection/, 'the browser must apply the same size decision');
-  // React does not run a form action when the submit event was default-prevented.
-  assert.match(source, /onSubmit=\{event=>\{if\(refused\)event\.preventDefault\(\);\}\}/,
-    'submission must be cancelled while a file is refused, so no upload request is made');
-  assert.match(source, /disabled=\{pending\|\|refused!==''\}/, 'the button must be disabled while refused');
+test('format is judged from the file header, not its name or declared type', () => {
+  assert.equal(documentType(Buffer.from('%PDF-1.3\n')), 'application/pdf');
+  assert.equal(documentType(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0])), 'image/jpeg');
+  assert.equal(documentType(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])), 'image/png');
+  // A renamed executable and an empty buffer are both refused.
+  assert.equal(documentType(Buffer.from('MZ\x90\x00\x03\x00\x00\x00')), null);
+  assert.equal(documentType(Buffer.alloc(HEADER_SAMPLE_BYTES)), null);
+  assert.equal(documentType(Buffer.from('%PDF')), null, 'too short to identify');
+  // It is given a header sample, so it must not judge total length.
+  const bigHeader = Buffer.concat([Buffer.from('%PDF-1.3\n'), Buffer.alloc(HEADER_SAMPLE_BYTES)]);
+  assert.equal(documentType(bigHeader), 'application/pdf');
+});
+
+test('the server refuses the size before any authorization or storage work', () => {
+  const guard = DOCUMENT_ACTIONS.indexOf('uploadRejection(size)');
+  const authorize = DOCUMENT_ACTIONS.indexOf('await authorizedPatient(');
+  const reserve = DOCUMENT_ACTIONS.indexOf('reserve_document');
+  const sign = DOCUMENT_ACTIONS.indexOf('createSignedUploadUrl');
+  assert.ok(guard > 0 && authorize > 0 && reserve > 0 && sign > 0, 'expected call sites were not found');
+  assert.ok(guard < authorize && guard < reserve && guard < sign,
+    'size must be refused before authorization, metadata or a signed URL');
+  // Both actions authorize; neither trusts an earlier step.
+  assert.equal(DOCUMENT_ACTIONS.match(/await authorizedPatient\(/g)?.length, 2,
+    'begin and finish must each re-check caregiver access');
+});
+
+test('the stored object is re-read before the upload is finalized', () => {
+  const probe = DOCUMENT_ACTIONS.indexOf('Range:');
+  const finish = DOCUMENT_ACTIONS.indexOf('finish_document');
+  assert.ok(probe > 0 && finish > 0 && probe < finish,
+    'the header must be read back from Storage before finalizing, not taken from the browser');
+  assert.match(DOCUMENT_ACTIONS, /content-range/, 'the stored size must be read from Storage');
+});
+
+test('the browser refuses an oversized file without sending anything', () => {
+  assert.match(UPLOAD_COMPONENT, /uploadRejection/, 'the browser applies the same size decision');
+  assert.match(UPLOAD_COMPONENT, /event\.preventDefault\(\)/, 'no native submission may occur');
+  assert.match(UPLOAD_COMPONENT, /if\(!file\|\|rejection\)\{setRefused\(rejection\?\?''\);return;\}/,
+    'a refused file must return before any network call');
+  assert.match(UPLOAD_COMPONENT, /disabled=\{busy\|\|refused!==''\}/, 'the button is disabled while refused');
+  // The refusal is decided before begin/PUT/finish are reached.
+  const decide = UPLOAD_COMPONENT.indexOf('const rejection=file?uploadRejection(file.size)');
+  const begin = UPLOAD_COMPONENT.indexOf('beginUpload(');
+  assert.ok(decide > 0 && begin > 0 && decide < begin);
 });
 
 test('choosing a different file clears the refusal so the user can retry', () => {
-  const source = readFileSync('apps/web/components/document-upload.tsx', 'utf8');
-  assert.match(source, /onChange=\{event=>\{[^}]*setRefused\(/,
-    'every new selection must re-decide, so a smaller file re-enables upload');
-  // The decision is pure, so the retry sequence is verifiable directly.
-  assert.equal(uploadRejection(REPORTED_FAILURE_BYTES), 'tooLarge');
-  assert.equal(uploadRejection(2 * 1024 * 1024), null, 'a smaller file afterwards must be accepted');
+  assert.match(UPLOAD_COMPONENT, /onChange=\{event=>choose\(/, 'every selection re-decides');
+  assert.match(UPLOAD_COMPONENT, /setRefused\(file\?uploadRejection\(file\.size\)\?\?'':''\)/);
+  assert.equal(uploadRejection(MAX_DOCUMENT_BYTES + 1), 'tooLarge');
+  assert.equal(uploadRejection(2 * 1024 * 1024), null, 'a smaller file afterwards is accepted');
 });
 
-test('the server repeats the size check and never trusts the browser', () => {
-  const source = readFileSync('apps/web/app/document-actions.ts', 'utf8');
-  assert.match(source, /const rejection=uploadRejection\(file\.size\);/);
-  // Compare call sites, not the import statements at the top of the file.
-  const guard = source.indexOf('uploadRejection(file.size)');
-  const authorize = source.indexOf('await authorizedPatient(');
-  const upload = source.indexOf('storage.from');
-  assert.ok(guard > 0 && authorize > 0 && upload > 0, 'expected call sites were not found');
-  assert.ok(guard < authorize && guard < upload,
-    'size must be refused before any authorization, storage or network work happens');
-});
-
-test('the size refusal is translated into every language', () => {
-  for (const locale of locales) {
-    const message = translations[locale].documentMessages.tooLarge;
-    assert.equal(typeof message, 'string');
-    assert.ok(message.length > 0, `${locale} tooLarge is empty`);
-    if (locale !== 'en') {
-      assert.notEqual(message, translations.en.documentMessages.tooLarge, `${locale} tooLarge is still English`);
-    }
+test('an interrupted or refused transfer is reported and leaves the form usable', () => {
+  for (const handler of ['xhr.onerror', 'xhr.onabort', 'xhr.ontimeout']) {
+    assert.ok(UPLOAD_COMPONENT.includes(handler), `${handler} must be handled`);
   }
+  assert.match(UPLOAD_COMPONENT, /status===413\?'storageRejected':'interrupted'/,
+    'a size refusal by Storage and a dropped connection must be distinguished');
+  assert.match(UPLOAD_COMPONENT, /finally\{[^}]*setBusy\(false\)/,
+    'the form must be re-enabled whatever happened');
+  assert.match(UPLOAD_COMPONENT, /request\.current\?\.abort\(\)/, 'a long transfer must be cancellable');
+});
+
+test('every upload outcome is translated into every language', () => {
+  const keys = ['tooLarge', 'chooseFile', 'unsupported', 'notStarted', 'uploadFailed',
+    'finalizeFailed', 'stored', 'unavailable', 'interrupted', 'storageRejected', 'verifyFailed'] as const;
+  for (const locale of locales) {
+    for (const key of keys) {
+      const message = translations[locale].documentMessages[key];
+      assert.equal(typeof message, 'string', `${locale}.${key} is missing`);
+      assert.ok(message.length > 0, `${locale}.${key} is empty`);
+      if (locale !== 'en') {
+        assert.notEqual(message, translations.en.documentMessages[key], `${locale}.${key} is still English`);
+      }
+    }
+    // The stated maximum must match the implemented one, in every language.
+    assert.match(translations[locale].uploadLabel, /50/, `${locale} upload label must state 50 MB`);
+    assert.match(translations[locale].documentMessages.tooLarge, /50/, `${locale} refusal must name the limit`);
+    assert.ok(translations[locale].uploadNeedsJs.length > 0, `${locale} needs a no-JavaScript notice`);
+  }
+});
+
+test('one place decides the storage object path', () => {
+  assert.equal(storagePath('p', 'd'), 'p/d');
+  const migration = readFileSync('database/migrations/003_private_documents.sql', 'utf8');
+  assert.match(migration, /d\.patient_id::text\|\|'\/'\|\|d\.id::text/,
+    'the storage policy must expect the same layout that storagePath produces');
+  assert.match(DOCUMENT_ACTIONS, /storagePath\(/, 'the server must use the shared helper');
 });
 
 // Without a boundary, an unexpected failure renders the framework's untranslated
@@ -113,4 +184,16 @@ test('a localized error boundary covers the document and record screens', () => 
       if (locale !== 'en') assert.notEqual(value, translations.en[key], `${locale}.${key} is still English`);
     }
   }
+});
+
+// A direct browser upload is blocked by the default policy unless Storage is allowed.
+test('the content security policy allows Storage at runtime and nothing wider', () => {
+  const proxy = readFileSync('apps/web/proxy.ts', 'utf8');
+  assert.match(proxy, /connect-src 'self'/, "connect-src must start from 'self'");
+  assert.match(proxy, /new URL\(process\.env\.SUPABASE_URL\)\.origin/,
+    'the allowed origin must be derived at runtime, not baked in at build time');
+  assert.ok(!/connect-src[^;"]*\*/.test(proxy), 'no wildcard origin may be allowed');
+  const config = readFileSync('apps/web/next.config.ts', 'utf8');
+  assert.ok(!/key:\s*'Content-Security-Policy'/.test(config),
+    'a second, build-time policy header would override the runtime one');
 });

@@ -45,3 +45,33 @@ test('health distinguishes running process from clinical readiness',async ({requ
   expect(response.headers()['cache-control']).toContain('no-store');
   expect(response.headers()['x-frame-options']).toBe('DENY');
 });
+
+// The upload path changed: the browser now sends the file straight to Supabase Storage,
+// so the security policy has to permit that connection and nothing wider. This instance
+// runs without a backend, so no Storage origin is expected here — only the shape.
+test('the security policy is served on every page and allows no wildcard origin',async ({request}) => {
+  for (const path of ['/en/login','/ru/register','/he/login']) {
+    const policy = (await request.get(path)).headers()['content-security-policy'];
+    expect(policy, `${path} must carry a policy`).toBeTruthy();
+    expect(policy).toContain("default-src 'self'");
+    expect(policy).toContain("frame-ancestors 'none'");
+    const connect = /connect-src ([^;]*)/.exec(policy)![1];
+    expect(connect).toContain("'self'");
+    expect(connect).not.toContain('*');
+  }
+});
+
+// A document link must refuse an unauthenticated visitor whatever the language, and must
+// not fall back to a blank or untranslated framework page.
+test('documents refuse an anonymous visitor in every language',async ({page}) => {
+  const record='40000000-0000-4000-8000-000000000001';
+  for (const locale of ['en','ru','he']) {
+    await page.goto(`/${locale}/records/${record}/documents`);
+    await expect(page.locator('html')).toHaveAttribute('lang',locale);
+    await expect(page.locator('html')).toHaveAttribute('dir',locale==='he'?'rtl':'ltr');
+    // No upload control, and no untranslated server-error page.
+    await expect(page.getByRole('button',{name:'Upload document'})).toHaveCount(0);
+    await expect(page.getByText('A server error occurred')).toHaveCount(0);
+    await expect(page.locator('body')).not.toBeEmpty();
+  }
+});

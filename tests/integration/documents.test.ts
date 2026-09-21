@@ -14,7 +14,7 @@ before(async()=>{
  create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
  create table storage.objects(id uuid default gen_random_uuid(),bucket_id text,name text,unique(bucket_id,name));
  alter table storage.objects enable row level security;grant select,insert,update,delete on storage.objects to authenticated;`);
- for(const name of ['001_record_foundation','003_private_documents'])await db.exec(readFileSync(new URL(`../../database/migrations/${name}.sql`,import.meta.url),'utf8'));
+ for(const name of ['001_record_foundation','003_private_documents','004_large_documents'])await db.exec(readFileSync(new URL(`../../database/migrations/${name}.sql`,import.meta.url),'utf8'));
  await db.query('insert into auth.users values($1),($2),($3)',[care,patient,other]);
  pid=(await db.query<{id:string}>("insert into public.patients(display_name,preferred_language) values('Synthetic documents','en') returning id")).rows[0].id;
  await db.query("insert into public.patient_access(patient_id,user_id,role) values($1,$2,'caregiver'),($1,$3,'patient')",[pid,care,patient]);
@@ -47,4 +47,32 @@ test('originals cannot be overwritten or removed and revocation cuts access',asy
  await db.exec('reset role');await db.query('update public.patient_access set revoked_at=now() where user_id=$1',[care]);
  await asUser(care);assert.equal((await db.query('select * from storage.objects')).rows.length,0);
  await assert.rejects(reserve(),/Access denied/);
+});
+
+// Migration 004 raises the supported original from 10 MiB to 50 MB so a real scanned PDF
+// can be stored unchanged. The metadata constraint and the bucket ceiling must move
+// together: if only one is raised, a file the interface accepts is refused later, after a
+// row already exists, leaving a pending entry behind.
+test('migration 004 raises the document ceiling in metadata and in storage together',async()=>{
+ const {MAX_DOCUMENT_BYTES}=await import('../../packages/domain/document.ts');
+ await db.exec('reset role');
+ const bucket=await db.query<{file_size_limit:string|number;public:boolean}>(
+  "select file_size_limit,public from storage.buckets where id='medical-originals'");
+ assert.equal(Number(bucket.rows[0].file_size_limit),MAX_DOCUMENT_BYTES,
+  'the bucket ceiling must equal the application cap exactly');
+ assert.equal(bucket.rows[0].public,false,'the bucket must stay private');
+ const version=await db.query<{version:number}>('select max(version) version from public.schema_versions');
+ assert.equal(Number(version.rows[0].version),4);
+
+ // Earlier tests revoke access on the shared patient, so use a fresh record here.
+ const large=(await db.query<{id:string}>("insert into public.patients(display_name,preferred_language) values('Synthetic large','en') returning id")).rows[0].id;
+ await db.query("insert into public.patient_access(patient_id,user_id,role) values($1,$2,'caregiver')",[large,care]);
+ await asUser(care);
+ // Exactly the supported maximum is accepted by the metadata constraint.
+ const biggest=await db.query<{id:string}>("select public.reserve_document($1,'synthetic-large.pdf','application/pdf',$2,$3) id",
+  [large,MAX_DOCUMENT_BYTES,'b'.repeat(64)]);
+ assert.ok(biggest.rows[0].id);
+ // One byte more is refused by the database, not only by the interface.
+ await assert.rejects(db.query("select public.reserve_document($1,'synthetic-too-large.pdf','application/pdf',$2,$3) id",
+  [large,MAX_DOCUMENT_BYTES+1,'c'.repeat(64)]),/violates check constraint/);
 });
