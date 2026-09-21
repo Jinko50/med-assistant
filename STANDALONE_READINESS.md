@@ -29,6 +29,15 @@ retry/failure state machine and 6 new measurement-binding tests), **47 SQL** (in
 atomicity and idempotency tests), the review's **6 regression tests**, **18 browser**, 52
 consistency checks, typecheck, clean build, 0 dependency vulnerabilities.
 
+**Windows candidate `0.6.0-chat-candidate.1` is built and smoke-tested, and is NOT
+published.** The extracted ZIP passes the portable test — connected login, RU/HE
+localization with correct lang/dir, anonymous admin/document denial, agreement between the
+interface stamp, VERSION.txt and MANIFEST.json, and a new check that no model-provider
+credential is in the package (`app-config.json` carries only `supabaseUrl` and
+`publishableKey`). It stays unpublished on purpose: the independent review's instruction is
+to publish only after the acceptance tests are resolved, and they have not been run. Earlier
+releases up to v0.5.0-large-uploads.1 are untouched.
+
 **Still not run, and not claimed:** the signed-in acceptance run. It is now written and
 executable — `tests/acceptance/authenticated-chat.spec.ts`, `npm run test:acceptance` —
 covering sign-in, a Russian measurement message, Confirm, Correct, decline, attachment,
