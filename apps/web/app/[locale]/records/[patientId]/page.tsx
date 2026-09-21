@@ -31,6 +31,8 @@ export default async function RecordPage({ params }: { params: Promise<{ locale:
     const admin = await isAppAdmin();
     return <Shell locale={locale} path={`/records/${patientId}`} role={result.role}>
       <nav className="record-actions" aria-label={t.dailyUse} style={{display:'flex',gap:12,flexWrap:'wrap',marginBottom:24}}>
+        <Link className="button secondary" href={`/${locale}/records/${patientId}/home`}>{t.homeTitle}</Link>
+        <Link className="button secondary" href={`/${locale}/records/${patientId}/checkin`}>{t.homeFeeling}</Link>
         {result.role === 'caregiver' && <Link className="button primary" href={`/${locale}/records/${patientId}/documents`}>{t.uploadDocuments}</Link>}
         {result.role === 'caregiver' && <Link className="button secondary" href={`/${locale}/records/${patientId}/history`}>{t.history}</Link>}
         {admin && <Link className="text-link" href={`/${locale}/admin`}>{t.manageUsers}</Link>}

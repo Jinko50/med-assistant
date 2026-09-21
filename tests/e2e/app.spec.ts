@@ -75,3 +75,20 @@ test('documents refuse an anonymous visitor in every language',async ({page}) =>
     await expect(page.locator('body')).not.toBeEmpty();
   }
 });
+
+// The daily home screen and the check-in page must refuse an anonymous visitor in every
+// language, stay translated, and never fall back to an untranslated framework error.
+test('daily screens are localized and refuse anonymous visitors',async ({page}) => {
+  const record='40000000-0000-4000-8000-000000000001';
+  for (const locale of ['en','ru','he']) {
+    for (const path of [`/${locale}/records/${record}/home`,`/${locale}/records/${record}/checkin`]) {
+      await page.goto(path);
+      await expect(page.locator('html')).toHaveAttribute('lang',locale);
+      await expect(page.locator('html')).toHaveAttribute('dir',locale==='he'?'rtl':'ltr');
+      await expect(page.getByText('A server error occurred')).toHaveCount(0);
+      // No check-in control may render without access.
+      await expect(page.getByRole('button',{name:/Save|Сохранить|שמירה/})).toHaveCount(0);
+      await expect(page.locator('body')).not.toBeEmpty();
+    }
+  }
+});
