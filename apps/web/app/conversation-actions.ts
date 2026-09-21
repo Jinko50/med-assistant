@@ -5,7 +5,7 @@ import { isLocale, replyText, fill, translations, type Locale } from '../lib/i18
 import { screen } from '../../../packages/domain/safety';
 import { read } from '../../../packages/domain/measurements';
 import { planReply, type AttachmentOutcome } from '../../../packages/domain/reply';
-import { assistantAvailable, assistantConfigured, generate } from '../lib/assistant';
+import { assistantAvailable, generate } from '../lib/assistant';
 
 // One conversation turn, in the documented order:
 //
@@ -276,11 +276,4 @@ export async function loadConversation(patientId: string, limit = 50): Promise<
   } catch (error) {
     return { ok: false, reason: error instanceof Error && error.message === 'ACCESS_DENIED' ? 'denied' : 'unavailable' };
   }
-}
-
-// Which provider, if any, would receive what is typed here. Shown on the screen so the
-// answer does not require reading the source.
-export async function assistantDisclosure(): Promise<{ on: boolean; recipient: string }> {
-  const config = assistantConfigured();
-  return { on: assistantAvailable(), recipient: config?.recipient ?? '' };
 }
