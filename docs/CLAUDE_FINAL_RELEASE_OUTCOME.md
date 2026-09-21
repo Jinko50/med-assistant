@@ -1,179 +1,159 @@
-# Final release outcome — Claude Code takeover
+# Final release outcome — Claude Code
 
-20 September 2026. Written after taking over from `docs/CLAUDE_RELEASE_REVIEW.md`
-(independent Codex verification) and `AGENTS.md`.
+Updated 21 September 2026, after the live upload failure in
+`docs/UPLOAD_FAILURE_REPRODUCTION.md` and the RELEASE HOLD in
+`docs/CLAUDE_RELEASE_REVIEW.md`. Supersedes the 20 September entry below.
 
-**Outcome in one line: the candidate is built and independently checked, but the release
-is NOT published, because the blocking acceptance evidence has not arrived.**
+**Outcome: RELEASE HELD. The upload failure is reproduced, root-caused and repaired, but
+the repair has not been retested by a real signed-in upload and download.**
 
-Model actually used for this work: **Claude Opus 5** (`claude-opus-5`), the model configured
-in this session. I did not change the owner's model. Codex's recommendation of GPT-6 Astra /
-High is not a Claude model name and was not used here.
+Model used: **Claude Opus 5** (`claude-opus-5`), the model configured in this session.
+Recommendation for the next stage: stay on Opus 5 at high reasoning for the repair-retest
+and release work, and use extra-high specifically for any security or authorization review.
+I did not change your model. Codex's GPT-6 Astra / High recommendation is not a Claude model.
 
-## Release scope, stated explicitly
+## What actually broke
 
-If and when this candidate is published, its honest scope is:
+Reproduced against a built server with **synthetic bytes only**. Your document was never
+read, stored or transmitted, and no test uploads it.
 
-> A **limited record and source-document management application** for one patient record and
-> separately authenticated caregivers, in Russian, Hebrew and English. It stores what a person
-> types and the original files they upload. It does not interpret documents, does not give
-> medical advice, and contains no medical AI.
+The investigation lead was half right, so here is the corrected mechanism:
 
-It is **not** a finished Med Assistant. Two things in particular:
+1. A request body larger than Next's `proxyClientMaxBodySize` is **not refused with a 413**.
+   It is silently **truncated** — `Request body exceeded 10MB … Only the first 10MB will be
+   available`.
+2. The truncated multipart payload then fails to parse: `Failed to parse body as FormData`
+   / `expected boundary after body`.
+3. That error is thrown while the request is parsed, **outside `uploadDocument`'s
+   try/catch**, so it became an unhandled 500 — your full-page server error.
 
-- **There is no chat.** The owner expects a place to have a conversation with the assistant.
-  No build contains one. This is missing product functionality, not an installation problem.
-  See "Chat" below.
-- Recovery, backup/restore, operational, clinical and privacy gates remain open in
-  `STANDALONE_READINESS.md`. Medical AI stays off.
+The important part, which the size mismatch alone hid: the default limit is exactly
+10,485,760 bytes, **identical to the app's own 10 MiB cap**. So uploads at or just below
+the supported maximum were broken too. This was not only a "you picked too big a file"
+problem; a legitimate maximum-size document would have failed the same way.
+
+## Repairs, and the evidence for each
+
+| Repair | Evidence |
+|---|---|
+| The browser refuses an oversized file and sends nothing. React does not run a form action when the submit event is default-prevented (verified in the installed React DOM source), and the button is disabled while a file is refused | 11 tests in `tests/unit/upload-limits.test.ts`, including exact-boundary sizes |
+| Choosing a different file clears the refusal, so the user can retry without reloading | Re-decided on every selection; covered by test |
+| The server repeats the size check before any authorization, storage or network work, and never trusts the browser | Call-site ordering asserted by test |
+| Framework request limit raised to 12 MiB, leaving headroom for multipart framing above the 10 MiB cap | Probed a built server at 9/10/11 MiB before and after. **Before:** the 10 and 11 MiB bodies were truncated and failed to parse. **After:** no truncation, all reach the application. Confirmed inside the packaged artifact as 12,582,912 bytes |
+| A localized error boundary replaces the untranslated full-page error, with a retry, in all three languages, leaking no internal detail | `apps/web/app/[locale]/error.tsx`, covered by test |
+| The refusal message is translated into EN/RU/HE | Covered by test |
+
+Reproduce with `node tools/check-upload-limits.mjs http://127.0.0.1:<port>` against a
+running build. It uses synthetic bytes and refuses to pass if a supported-size upload does
+not reach the application.
+
+**Honest limit:** a body above 12 MiB still cannot be parsed gracefully server-side. The
+browser now prevents that case and the boundary catches the remainder, but **your 40.8 MB
+original is still not supported**. Nothing here makes that file work.
 
 ## Candidate
 
 | Item | Value |
 |---|---|
-| Version | `0.4.1-localized-test.1` |
-| Local artifact | `dist/windows-0.4.1-candidate/Med-Assistant-Windows-x64.zip` |
-| Size | 41,127,082 bytes |
-| SHA256 | `b2a714c0568fd1af8d941c08577e3c3a0f102d1a11dcb4123cbec8e8b7902654` |
-| Manifest | connected, `clinicalReady=false`, 1,360 files, all hashes re-verified after extraction |
-| Published | **No.** No release page, tag or download link exists for this version |
-| Previous releases | Untouched; `v0.4.0-localized-test.1` and earlier remain downloadable |
+| Version | `0.4.2-upload-repair.1` |
+| Local artifact | `dist/windows-0.4.2-candidate/Med-Assistant-Windows-x64.zip` |
+| Size | 41,147,312 bytes |
+| SHA256 | `efd5f812ac225e5bccba38eb272c94bbb75226966a218a81ffe1265badb97cab` |
+| Manifest | connected, `clinicalReady=false`, 1,364 files, version agreement verified |
+| Published | **No.** Held for the failed live test |
 
-## Findings from the review, and what I did
+Verification on this tree: 37 unit tests, 19 database tests, 10/10 browser tests, typecheck,
+52 consistency checks, clean build, packaging version guard, extracted-package smoke test
+with exact version agreement, and the upload-limit probe. The behavioral gate still exits 1
+by design. No live account, grant, migration or published release was touched; authorization
+code is unchanged.
 
-| Review finding | Resolution |
-|---|---|
-| Packaging accepts `-Version` while the interface version is compiled from `NEXT_PUBLIC_APP_VERSION`; no exact agreement check | `tools/package-windows.ps1` now refuses to package a build whose compiled output does not carry the requested version, before creating any output. `tools/test-portable.cjs` asserts exact equality between the interface stamp, `VERSION.txt` and `MANIFEST.json`, checks the stamp again on the RU and HE sign-in screens, and accepts an expected release version as argument 2 or `EXPECTED_APP_VERSION`. Both directions were exercised: a deliberately wrong version was refused, the correct one passed |
-| Admin audit list shows raw action codes and raw timestamps | `auditLabel()` and `formatTimestamp()` in `apps/web/lib/i18n.ts`; the admin list now renders translated labels and locale-formatted times in a `<time>` element that stays left-to-right inside Hebrew. A unit test extracts every action code the SQL migration can write and requires a translation for it in all three languages, so a future migration that adds a code fails the build rather than leaking it |
-| Unknown message keys render blank, hiding a failed operation | Shared `actionMessage()` resolver used by the administration, registration and upload forms. An unrecognised key now renders a localized notice ("this version could not display the result… nothing was assumed") instead of an empty line. An empty key still renders nothing |
-| Static checker's inherited `TOTAL EXECUTED` figure of 28 is confusable with the gating subset | The checker now prints it as `HISTORICAL EXECUTED … (historical Project transcripts only … not executed by this application and not the gating subset)`. `tests/EXECUTION_LOG.md` and all historical safety evidence were left untouched |
+## Open decision for you
 
-## Verification I actually ran, on this working tree
+**Do you want 10 MiB to remain the supported maximum, or should large scans be supported?**
+Your 40.8 MB file suggests the real documents are bigger than the current cap. Supporting
+them is a deliberate change, not a setting: Supabase's documented Free-project ceiling is
+50 MB and resumable uploads are recommended above 6 MB, so it means changing the bucket
+limit, the app cap, the request path to a resumable/direct upload, and then re-verifying a
+real upload and download. I have not started that, because it should not be guessed at.
 
-| Check | Result |
-|---|---|
-| `npm test` | PASS, 28 tests (22 before; 6 added for the fixes above) |
-| `npm run test:database` | PASS, 19 tests |
-| `npm audit --audit-level=high` | PASS, 0 vulnerabilities |
-| `npm run build` (stamped `NEXT_PUBLIC_APP_VERSION=0.4.1-localized-test.1`) | PASS; version confirmed compiled into the server output |
-| `npm run typecheck` | PASS |
-| `npm run test:e2e` | PASS, 10/10 desktop and mobile, with `PLAYWRIGHT_CHANNEL=chrome` |
-| `python tools/check_consistency.py` | PASS, 52 checks |
-| Packaging version guard, negative case | PASS — refused `9.9.9-not-built` and created no output directory |
-| `tools/package-windows.ps1 -Connected -Version 0.4.1-localized-test.1` | PASS |
-| Extracted-package smoke test with expected version | PASS, including the new stamp/VERSION.txt/MANIFEST agreement |
-| Manifest re-verification after extraction | PASS, 1,360/1,360 file hashes match |
-| Package secret scan | PASS — no `.env`, `.pem` or `.key` files; the only `sb_secret_`/`service_role` hits are prefix checks inside the bundled Supabase library, not credentials. `app-config.json` contains only the project URL and the publishable key |
-| `tools/check-live-backend.mjs` (read-only, anonymous) | PASS — Auth reachable, email authentication enabled, all 11 application tables deny anonymous reads |
-| `npm run check:behavioral` | BLOCKED, exit 1, as designed — no release configuration or behavioral evidence was supplied, and no model tests were run |
+Compressing the original instead is possible but must preserve the untouched original and
+be checked for readability first. I have not done that either.
 
-Note on the e2e suite: the first run failed 8/10 purely because the bundled Chromium is not
-installed on this machine. Re-run against installed Chrome, all 10 passed. No application
-code was involved in that failure.
+## Blockers to publication
 
-Nothing below was done: no live family grant was modified, no password was requested or
-handled, no session was created by bypassing email verification or by impersonation, no
-authenticated upload result was invented, no historical safety evidence was edited, and no
-permission prompt or verification step was bypassed.
+1. **The repaired upload path has not been retested live.** This is now the top blocker: a
+   real signed-in upload, finalize, download, and the same document opened from the other
+   approved account on the other computer.
+2. **Authenticated localized screens are still unverified** — RU/HE administration,
+   documents, record editing and history inside a real session. The translated audit list
+   has never been seen with real rows, since only an administrator can read them.
+3. **There is still no chat.** You expect one; it does not exist in any build. A
+   record/document repair is not the finished Med Assistant. It must be built behind the
+   documented order — deterministic emergency and medication handling, bounded retrieval
+   over your own recorded facts, output guards, audit — and the behavioral gate must pass
+   with real captured evidence before any conversational medical feature ships.
+4. **Clinical, recovery, backup/restore, operational and privacy gates remain open.** No
+   medical readiness claim is made and medical AI stays off.
 
-## Blockers preventing honest publication
+## Exact retest steps
 
-**B1 — Authenticated Storage acceptance is unverified.** A real upload → finalize → download
-through Supabase Storage, then the same document opened from the *other* approved account on
-the *other* computer, has never been performed. This is the one test that proves the product's
-core promise, and no automated check in this repository can substitute for it: the anonymous
-smoke test verifies only that a signed-out visitor is *denied*. The owner was asked for this
-result. **It has not arrived.** I will not fabricate it.
+Do these yourselves, signed in with your own credentials. Do not send passwords, and use a
+harmless non-medical sample file — not a real medical document.
 
-**B2 — Authenticated localized screens are unverified.** RU/HE administration, documents,
-record editing, history and language switching have been verified by source inspection,
-unit tests and anonymous browser checks. No one has confirmed how they render inside a real
-signed-in session. The new translated audit list in particular has never been seen with real
-rows in it, because audit rows are only readable by an administrator.
+1. **Install.** Close any running app window and console. Extract the candidate ZIP to a
+   **new** folder, run `Start Med Assistant.cmd`, and confirm the sign-in footer reads
+   `Version 0.4.2-upload-repair.1`. If it says anything else, an old copy is running and
+   every later step is meaningless. Repeat on the second computer.
+2. **The failure case.** Try the same large PDF that failed. Expected now: a clear message
+   in your language saying it is larger than 10 MB and nothing was sent — **not** a
+   full-page error. Report the exact wording you see.
+3. **Retry after refusal.** Without reloading, choose a small sample file instead. The
+   button should become usable again.
+4. **A supported upload.** Upload the small sample. Report the message and whether the
+   entry shows as stored rather than pending.
+5. **Download it back** from the same account and confirm it opens and matches.
+6. **Cross-account, cross-device.** From the other approved account on the other computer,
+   open the same record's Documents, confirm the entry is listed, download it, confirm it
+   opens.
+7. **Denial still holds.** Sign out and reopen the document link; it must refuse.
+8. **Localized screens while signed in.** On `/ru/` and `/he/`, check administration, the
+   record and Documents: audit lines read as translated sentences with a readable date and
+   time, Hebrew reads right to left while emails and times stay left to right, language
+   links work without signing out, and no action leaves a blank message line.
+9. **Report what actually happened**, including anything that looked wrong. A step not done
+   should be reported as not done, not as passing.
 
-**B3 — There is no chat.** The owner expects one and it does not exist.
+Steps 2 and 3 are the ones that prove this repair. Once reported, I will record the results
+and, if they pass, publish `0.4.2-upload-repair.1` at the limited scope below.
 
-**B4 — Clinical, recovery, backup/restore, operational and privacy gates remain open.** No
-clinical, pharmacy or local-protocol sign-off exists; the behavioral gate correctly refuses.
-No claim of medical readiness can be made, and this candidate must not be presented as one.
+## Release scope, if published
 
-**B5 — Publication is an outward-facing action I have not taken.** Creating the release and
-telling the family to download it should follow the evidence in B1, not precede it.
+> A **limited record and source-document management application** for one patient record
+> and separately authenticated caregivers, in Russian, Hebrew and English. It stores what
+> a person types and the original files they upload, up to 10 MiB each. It does not
+> interpret documents, does not give medical advice, and contains no medical AI.
 
-## Exact remaining acceptance steps
+Earlier releases remain downloadable and untouched.
 
-Each step is something the account holders do themselves, signed in with their own
-credentials. Do not send passwords, and do not send the contents of any real medical
-document — use a harmless non-medical sample file.
+---
 
-1. **Install the candidate.** Close any running app window and console. Extract
-   `Med-Assistant-Windows-x64.zip` to a **new** folder. Run `Start Med Assistant.cmd` from
-   that folder. On the sign-in page, confirm the footer reads `Version 0.4.1-localized-test.1`.
-   If it reads anything else, an older copy is running and every later step is meaningless.
-   Repeat on the second computer.
-2. **Upload (caregiver account, computer 1).** Sign in. Open the record, then Documents.
-   Upload a harmless one-page sample PDF or photo. Report the exact message shown and whether
-   the entry appears as stored rather than pending.
-3. **Download it back (same account).** Use "Download original". Report whether the file opens
-   and is the same file that was uploaded.
-4. **Cross-account, cross-device (the other approved account, computer 2).** Sign in as the
-   second approved account, open the same record's Documents, confirm the entry from step 2 is
-   listed, download it and confirm it opens. Report exactly what was and was not visible.
-5. **Denial still holds.** Sign out, then reopen the document link. Confirm it refuses access.
-6. **Localized screens while signed in.** On `/ru/` and `/he/`, open administration, the record
-   and Documents. Confirm: recent access changes read as translated sentences with a readable
-   date and time, not as codes like `account.enabled.caregiver` or a raw UTC string; Hebrew
-   reads right to left while email addresses and times stay left to right; the language links
-   switch language without signing out; and no action leaves a blank message line.
-7. **Record edit and history.** Make one trivial entry with a source and save it. Confirm the
-   saved message appears, the history page shows a new version, and administration shows a
-   corresponding localized audit line.
-8. **Report the actual results**, including anything that looked wrong. A step that was not
-   done should be reported as not done, not as passing.
+# Earlier entry — 20 September 2026
 
-Once steps 1–8 are reported, publication is a short step: record the results in
-`docs/LIVE_BACKEND_VERIFICATION.md` and `STANDALONE_READINESS.md`, then publish the existing
-artifact — its SHA256 is already recorded above and must not change.
+Resolved the four secondary findings from the independent Codex review
+(`docs/CLAUDE_RELEASE_REVIEW.md`) and prepared candidate `0.4.1-localized-test.1`, which
+was never published and is now superseded:
 
-## Chat, and how it should be built
+- **Version agreement** — packaging refuses a build whose compiled
+  `NEXT_PUBLIC_APP_VERSION` does not match `-Version`; the extracted-package smoke test
+  asserts exact equality between the interface stamp, `VERSION.txt` and `MANIFEST.json`,
+  and accepts an expected release version. Verified in both directions.
+- **Audit list localized** — translated action labels and locale-formatted timestamps. A
+  test derives every action code the migration can write and requires a translation in all
+  three languages; an unrecognised code is shown rather than dropped.
+- **Blank message keys** — an unrecognised key renders a localized notice instead of an
+  empty line, so a failed operation cannot look like a silent success.
+- **Checker label** — the inherited historical figure is labelled so it cannot be read as
+  execution by this application or as the gating subset. Historical evidence untouched.
 
-Chat is the owner's expectation and the largest remaining gap. It must not be satisfied by
-pointing a general chatbot at a medical record. The order in
-`docs/STANDALONE_IMPLEMENTATION_PLAN.md` and `STANDALONE_READINESS.md` still applies:
-authentication → deterministic emergency and medication recognition with fixed localized
-responses → bounded retrieval restricted to the person's own recorded facts and sources →
-provider call → output guards → audit. The deterministic emergency and medication engine is
-currently FAIL with static document checks only; it is the prerequisite, not an afterthought.
-Until the behavioral gate in `tools/check-behavioral.ts` is given real captured evidence and
-passes, no conversational medical feature ships.
-
-A defensible interim step, if the owner wants something visible sooner, is a non-medical
-scoped assistant that can only read back and search the family's own recorded entries and
-say "not recorded" otherwise — with no advice, no inference and no external sources. That is
-a product decision for the owner, not something I should assume.
-
-## Files changed in this takeover
-
-- `apps/web/lib/i18n.ts` — `messageUnknown` and `auditActions` in EN/RU/HE; `actionMessage()`,
-  `auditLabel()`, `formatTimestamp()` helpers.
-- `apps/web/app/[locale]/admin/page.tsx` — translated, locale-formatted audit list.
-- `apps/web/components/admin-forms.tsx`, `register-form.tsx`, `document-upload.tsx` — shared
-  message resolver with a visible fallback.
-- `tools/package-windows.ps1` — build/stamp version agreement guard.
-- `tools/test-portable.cjs` — exact version agreement assertions and optional expected version.
-- `tools/check_consistency.py` — unambiguous label for the inherited historical figure.
-- `tests/unit/i18n.test.ts` — six added tests; inline left-to-right isolation is now allowed
-  for `<time>`/`<bdi>` as it already was for `<span>`, while a hard-coded page direction
-  still fails.
-- `STANDALONE_READINESS.md`, `docs/WINDOWS_DOWNLOAD.md`, this file.
-
-Authorization code was not touched: `apps/web/lib/dal.ts`, `apps/web/lib/admin.ts`,
-`packages/domain/access.ts` and everything under `database/` are unchanged.
-
-## How to resume
-
-Reply with the step 1–8 results from the two accounts. With them I will record the evidence
-honestly and finish publication of `0.4.1-localized-test.1` at the limited scope stated above.
-If a step fails, say what actually happened and I will fix the cause before anything is
-published. If the results cannot be produced, the candidate stays unpublished and
-`v0.4.0-localized-test.1` remains the latest available download.
+At that point the blocker was missing acceptance evidence. It is now a reproduced failure.

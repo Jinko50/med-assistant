@@ -4,11 +4,15 @@ import {revalidatePath} from 'next/cache';
 import {z} from 'zod';
 import {authorizedPatient} from '../lib/dal';
 import {isLocale} from '../lib/i18n';
-import {documentType,MAX_DOCUMENT_BYTES} from '../../../packages/domain/document';
+import {documentType,uploadRejection} from '../../../packages/domain/document';
 // The message is a key into translations[locale].documentMessages.
 export async function uploadDocument(_state:{message:string},form:FormData){
  const patient=String(form.get('patient'));const locale=String(form.get('locale'));const file=form.get('file');
- if(!z.uuid().safeParse(patient).success||!isLocale(locale)||!(file instanceof File)||file.size<8||file.size>MAX_DOCUMENT_BYTES)return {message:'chooseFile'};
+ if(!z.uuid().safeParse(patient).success||!isLocale(locale)||!(file instanceof File))return {message:'chooseFile'};
+ // Authoritative: the browser also refuses oversized files, but it is not trusted. A body
+ // too large for the framework never reaches here, which is why the client must refuse first.
+ const rejection=uploadRejection(file.size);
+ if(rejection)return {message:rejection};
  try{
   const {db}=await authorizedPatient(patient,'maintain_record');
   const content=Buffer.from(await file.arrayBuffer());const type=documentType(content);

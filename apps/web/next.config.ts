@@ -2,7 +2,14 @@ import type { NextConfig } from 'next';
 const config: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
-  experimental: { serverActions: { bodySizeLimit: '12mb' } },
+  // Both limits must exceed MAX_DOCUMENT_BYTES (10 MiB) to leave room for multipart
+  // framing. proxyClientMaxBodySize defaults to exactly 10 MiB, and a body over it is
+  // silently TRUNCATED rather than refused: the multipart payload then fails to parse
+  // ("expected boundary after body"), which throws outside the server action's
+  // try/catch and renders a full-page server error. Verified by probing a built server
+  // with synthetic bodies at 9/10/11 MiB before and after this setting.
+  // Keep in step with MAX_UPLOAD_REQUEST_BYTES in packages/domain/document.ts.
+  experimental: { serverActions: { bodySizeLimit: '12mb' }, proxyClientMaxBodySize: '12mb' },
   async headers() {
     return [{ source: '/:path*', headers: [
       { key: 'X-Content-Type-Options', value: 'nosniff' },

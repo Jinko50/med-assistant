@@ -22,6 +22,27 @@ It refuses existing output directories and environment/key files in the package.
 release includes a SHA-256 checksum and per-file manifest. Rehearse from an extracted ZIP
 using `node tools/test-portable.cjs <extracted-folder>` before publishing.
 
+## v0.4.2-upload-repair.1 — prepared candidate, NOT published
+
+Supersedes the 0.4.1 candidate below. Still unpublished, and now for a stronger reason:
+a real upload failed on the family laptop with a full-page server error. That path is
+repaired but has not been retested by a signed-in upload and download.
+
+- Local artifact: `dist/windows-0.4.2-candidate/Med-Assistant-Windows-x64.zip`
+- Size: 41,147,312 bytes.
+- SHA256: `efd5f812ac225e5bccba38eb272c94bbb75226966a218a81ffe1265badb97cab`
+- Manifest: version `0.4.2-upload-repair.1`, connected, `clinicalReady=false`, 1,364 files.
+- Packaged request limit confirmed inside the artifact: 12,582,912 bytes.
+
+Changes since the 0.4.1 candidate: an oversized file is refused in the browser with a
+localized message before anything is sent; the framework request limit has headroom above
+the 10 MiB document cap, so a maximum-size upload is no longer truncated into an unparsable
+request; and a localized error boundary replaces the untranslated full-page error.
+
+**The supported maximum is still 10 MiB.** A larger original, including the 40.8 MB file
+that triggered the failure, is refused with a clear message. It is not supported, and
+nothing here should be described as making it work.
+
 ## v0.4.1-localized-test.1 — prepared candidate, NOT published
 
 This build exists only on the development machine. There is no release page and no

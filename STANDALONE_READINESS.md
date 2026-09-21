@@ -1,5 +1,17 @@
 # Standalone readiness — 2026-09-19
 
+Update 2026-09-21 (Claude Code): **RELEASE HELD.** A live document upload failed with a
+full-page server error. Root cause reproduced with synthetic bytes and repaired: a request
+body above the framework limit is silently truncated, the multipart payload then fails to
+parse, and that error is thrown outside the upload action's try/catch. Because the default
+limit equalled MAX_DOCUMENT_BYTES exactly, uploads at or near the supported 10 MiB maximum
+were broken too, not only the owner's oversized file. The browser now refuses an oversized
+file before sending anything, the framework limit has headroom for multipart framing, and
+a localized error boundary replaces the untranslated error page. Candidate
+`0.4.2-upload-repair.1` is built and smoke-tested but **NOT published**: the repair has not
+been retested by a real signed-in upload and download. The owner's 40.8 MB original remains
+**unsupported**; whether to raise the cap is an open decision.
+
 Update 2026-09-20 (Claude Code, after independent Codex verification): a release
 **candidate** `0.4.1-localized-test.1` is built and smoke-tested locally but is **NOT
 published**. It resolves the secondary findings in docs/CLAUDE_RELEASE_REVIEW.md: the
@@ -48,7 +60,7 @@ The historical rows below do not constitute patient-use approval.
 | Patient mobile/accessible RU/HE/EN/RTL interface | apps/web/components; i18n; CSS; admin/register/document pages | Desktop/mobile browser and RTL tests; tests/unit/i18n.test.ts; packaged-ZIP smoke test asserts RU/HE rendering, lang/dir, language links and LTR email fields | PARTIAL | Real login, screen-reader/elderly usability, voice, final contrast review |
 | Deterministic emergency / medication engine | Existing prose preserved | Static document checks only | FAIL | Recognition, localized fixed responses, clinical review, residual risks |
 | AI provider orchestration and bounded retrieval | Planned | None | FAIL | No patient-facing chat exists in any build, though the owner expects one. Auth → safety → sources → provider → guards → audit must come first |
-| Secure documents and extraction/review | migration 003; documents pages/actions | Signature unit test and 3 SQL storage-policy tests; live private bucket verified; upload route now localized and reachable in two clicks from the record | PARTIAL | **Live Storage upload/download acceptance still unverified — needs the account holders' own sign-in.** Malware scanning, candidate-only extraction and review |
+| Secure documents and extraction/review | migration 003; documents pages/actions | Signature unit test and 3 SQL storage-policy tests; live private bucket verified; upload route localized; oversized-upload and request-limit repair verified with synthetic probes and 11 unit tests | FAIL | **A real live upload produced a full-page server error.** Repaired but NOT retested by a signed-in upload/download. Files above 10 MiB are refused, not supported. Malware scanning, candidate-only extraction and review |
 | Audit/version history/concurrent edits | SQL save_record/revisions/audit; history route | PGlite stale-version and audit-failure rollback tests | PARTIAL | Live multi-session test, history pagination and source-rich historical view |
 | Executable clinical scenarios / actual outputs | Historical tests/EXECUTION_LOG.md; new inventory | No new model execution | PARTIAL | Full harness, trustworthy captures, 2 historical FAILs and 7 unrun parents |
 | Integration / end-to-end tests | tests/integration; tests/e2e | SQL and browser tests run locally | PARTIAL | Full authenticated Supabase flow and model tests remain |
