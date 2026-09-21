@@ -1,6 +1,6 @@
 import {notFound} from 'next/navigation';
 import Link from 'next/link';
-import {isLocale,translations,direction} from '../../../lib/i18n';
+import {isLocale,translations,direction,auditLabel,formatTimestamp} from '../../../lib/i18n';
 import {requireAdmin} from '../../../lib/admin';
 import {AccessMessage} from '../../../components/access-message';
 import {PatientForm,AccountForm} from '../../../components/admin-forms';
@@ -69,7 +69,7 @@ export default async function Admin({params}:{params:Promise<{locale:string}>}){
    </div>
   </section>)}
 
-  <section><h2>{t.recentChanges}</h2><ul>{data.audit.map(event=><li key={event.id}>{event.created_at} · {event.action} · <span dir="ltr">{event.email??t.patientRecordLabel}</span></li>)}</ul></section>
+  <section><h2>{t.recentChanges}</h2><ul>{data.audit.map(event=><li key={event.id}><time dateTime={event.created_at} dir="ltr">{formatTimestamp(locale,event.created_at)}</time> · {auditLabel(locale,event.action)} · <span dir="ltr">{event.email??t.patientRecordLabel}</span></li>)}</ul></section>
   <footer className="footer"><span>{t.versionLabel} {APP_VERSION}</span><span className="tiny">{t.updateHelp}</span></footer>
  </main>;
 }

@@ -13,6 +13,17 @@ $standalone = Join-Path $repoRoot 'apps/web/.next/standalone'
 if (-not (Test-Path -LiteralPath (Join-Path $standalone 'apps/web/server.js'))) { throw 'Run npm run build first.' }
 # Double quotes inside a single-quoted argument are stripped by Windows PowerShell 5.1.
 if ((node -p "process.platform + '/' + process.arch") -ne 'win32/x64') { throw 'Build this package on Windows x64.' }
+# -Version stamps the files, but the version the family reads in the interface is
+# compiled into the build from NEXT_PUBLIC_APP_VERSION. If those disagree the package
+# is mislabelled, so refuse to package a build that does not carry the requested version.
+if ($Version) {
+  $compiled = Join-Path $standalone 'apps/web/.next/server'
+  $carries = Get-ChildItem -LiteralPath $compiled -Recurse -Force -File -Filter *.js |
+    Select-String -SimpleMatch -Pattern $Version -List | Select-Object -First 1
+  if (-not $carries) {
+    throw "The build in apps/web/.next does not carry version '$Version'. Rebuild with NEXT_PUBLIC_APP_VERSION set to '$Version', then package again."
+  }
+}
 New-Item -ItemType Directory -Path $OutputDirectory | Out-Null
 $packageRoot = Join-Path $OutputDirectory 'Med-Assistant-Windows'
 New-Item -ItemType Directory -Path (Join-Path $packageRoot 'runtime') -Force | Out-Null

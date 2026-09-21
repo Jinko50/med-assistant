@@ -22,6 +22,29 @@ It refuses existing output directories and environment/key files in the package.
 release includes a SHA-256 checksum and per-file manifest. Rehearse from an extracted ZIP
 using `node tools/test-portable.cjs <extracted-folder>` before publishing.
 
+## v0.4.1-localized-test.1 — prepared candidate, NOT published
+
+This build exists only on the development machine. There is no release page and no
+download link for it yet, because the blocking acceptance test (a real authenticated
+upload, finalize, download and cross-account view) has not been reported. Do not
+describe it to the family as available.
+
+- Local artifact: `dist/windows-0.4.1-candidate/Med-Assistant-Windows-x64.zip`
+- Size: 41,127,082 bytes.
+- SHA256: `b2a714c0568fd1af8d941c08577e3c3a0f102d1a11dcb4123cbec8e8b7902654`
+- Manifest: version `0.4.1-localized-test.1`, connected, `clinicalReady=false`, 1,360 files,
+  all hashes re-verified after extraction.
+- Built from the working tree described in docs/CLAUDE_FINAL_RELEASE_OUTCOME.md.
+
+Changes since v0.4.0-localized-test.1: administration audit rows show translated action
+labels and locale-formatted times instead of raw database codes and UTC strings; an
+unrecognised action message shows a localized notice instead of a blank line; packaging
+refuses a build whose compiled version does not match `-Version`; the extracted-package
+smoke test asserts exact agreement between the interface stamp, `VERSION.txt` and
+`MANIFEST.json`, and accepts an expected release version as its second argument.
+
+**This build still has no chat.** It manages records and source documents only.
+
 ## v0.4.0-localized-test.1 — 20 September 2026
 
 - Release: https://github.com/Jinko50/med-assistant/releases/tag/v0.4.0-localized-test.1

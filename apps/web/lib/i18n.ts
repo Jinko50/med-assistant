@@ -64,6 +64,8 @@ const en = {
   adminMessages: { invalidLanguage: 'Invalid language.', checkFields: 'Check the email address, patient and role.', conflict: 'Another change was saved first. Refresh and try again.', duplicatePatient: 'This patient already has an active patient account. Revoke that account first.', notChanged: 'Account was not changed. Check access and try again.', adminRequired: 'Administrator access is required. Nothing was changed.', saved: 'Saved. Access changes apply immediately.', enterName: 'Enter a patient display name.', patientNotCreated: 'Patient was not created.', patientCreated: 'Patient created. Add the approved email addresses below.', adminRequiredShort: 'Administrator access is required.' },
   registerMessages: { invalidInput: 'Enter a valid email and a password of at least 6 characters.', mismatch: 'Passwords do not match.', unavailable: 'Registration is unavailable. Ask your administrator to check email delivery and account settings.', submitted: 'If registration is available, check your email and confirm your address. Then return here and sign in. Only administrator-approved addresses can access records.', tempUnavailable: 'Registration is temporarily unavailable. Try again later.' },
   documentMessages: { chooseFile: 'Choose a PDF, JPEG or PNG file up to 10 MB.', unsupported: 'The file content is not a supported PDF, JPEG or PNG.', notStarted: 'Upload was not started. Check your access and try again.', uploadFailed: 'Upload failed. The pending entry remains visible; no medical facts were added.', finalizeFailed: 'The file was transferred but could not be finalized. Ask the administrator to inspect the pending entry.', stored: 'Document stored privately. It has not been interpreted or added to confirmed medical facts.', unavailable: 'Upload unavailable. Check your connection and access.' },
+  messageUnknown: 'This version could not display the result of that action. Nothing was assumed. Reload the page and check before trying again.',
+  auditActions: { 'patient.created': 'Patient record created', 'account.enabled.patient': 'Patient access enabled', 'account.enabled.caregiver': 'Caregiver access enabled', 'account.revoked': 'Access revoked', 'account.claimed': 'Account linked after email confirmation' },
   categories: { profile: 'Profile', medication: 'Medication', allergy: 'Allergy / reaction', condition: 'Medical history', lab: 'Lab result', observation: 'Measurement', care_plan: 'Care plan', timeline: 'Health event', note: 'Family note' },
   provenanceLabels: { DOCUMENTED: 'Documented', REPORTED: 'Reported', 'SEEN IN PHOTO': 'Seen in photo', ESTIMATED: 'Estimated', UNKNOWN: 'Unknown' },
 };
@@ -98,6 +100,8 @@ export const translations = {
     adminMessages: { invalidLanguage: 'Неверный язык.', checkFields: 'Проверьте адрес, пациента и роль.', conflict: 'Кто-то уже сохранил изменение. Обновите страницу и попробуйте снова.', duplicatePatient: 'У этого пациента уже есть активный аккаунт пациента. Сначала отзовите его.', notChanged: 'Доступ не изменён. Проверьте права и попробуйте снова.', adminRequired: 'Нужны права администратора. Ничего не изменено.', saved: 'Сохранено. Изменения доступа действуют сразу.', enterName: 'Введите имя пациента.', patientNotCreated: 'Карта пациента не создана.', patientCreated: 'Карта создана. Добавьте одобренные адреса ниже.', adminRequiredShort: 'Нужны права администратора.' },
     registerMessages: { invalidInput: 'Введите правильный адрес и пароль не менее 6 символов.', mismatch: 'Пароли не совпадают.', unavailable: 'Регистрация недоступна. Попросите администратора проверить отправку почты и настройки аккаунтов.', submitted: 'Если регистрация доступна, проверьте почту и подтвердите адрес. Затем вернитесь сюда и войдите. Доступ к записям получают только адреса, одобренные администратором.', tempUnavailable: 'Регистрация временно недоступна. Попробуйте позже.' },
     documentMessages: { chooseFile: 'Выберите файл PDF, JPEG или PNG размером до 10 МБ.', unsupported: 'Содержимое файла не является поддерживаемым PDF, JPEG или PNG.', notStarted: 'Загрузка не начата. Проверьте доступ и попробуйте снова.', uploadFailed: 'Загрузка не удалась. Незавершённая запись осталась видимой; медицинские сведения не добавлены.', finalizeFailed: 'Файл передан, но завершить обработку не удалось. Попросите администратора проверить незавершённую запись.', stored: 'Документ сохранён приватно. Он не расшифрован и не добавлен в подтверждённые медицинские сведения.', unavailable: 'Загрузка недоступна. Проверьте соединение и доступ.' },
+    messageUnknown: 'Эта версия не смогла показать результат действия. Ничего не предполагается. Обновите страницу и проверьте результат, прежде чем повторять.',
+    auditActions: { 'patient.created': 'Создана запись пациента', 'account.enabled.patient': 'Включён доступ пациента', 'account.enabled.caregiver': 'Включён доступ близкого', 'account.revoked': 'Доступ отозван', 'account.claimed': 'Аккаунт связан после подтверждения почты' },
     categories: { profile: 'Профиль', medication: 'Лекарство', allergy: 'Аллергия / реакция', condition: 'История болезни', lab: 'Анализ', observation: 'Измерение', care_plan: 'План ухода', timeline: 'Событие', note: 'Заметка близких' },
     provenanceLabels: { DOCUMENTED: 'В документе', REPORTED: 'Со слов', 'SEEN IN PHOTO': 'На фото', ESTIMATED: 'Оценка', UNKNOWN: 'Неизвестно' },
   },
@@ -124,7 +128,34 @@ export const translations = {
     adminMessages: { invalidLanguage: 'שפה לא תקינה.', checkFields: 'בדקו את כתובת הדוא״ל, המטופל והתפקיד.', conflict: 'שינוי אחר נשמר לפני כן. רעננו ונסו שוב.', duplicatePatient: 'למטופל זה כבר יש חשבון מטופל פעיל. בטלו אותו תחילה.', notChanged: 'ההרשאה לא שונתה. בדקו גישה ונסו שוב.', adminRequired: 'נדרשת הרשאת מנהל. דבר לא שונה.', saved: 'נשמר. שינויי הגישה חלים מיד.', enterName: 'הזינו שם מטופל לתצוגה.', patientNotCreated: 'רשומת המטופל לא נוצרה.', patientCreated: 'רשומת המטופל נוצרה. הוסיפו למטה את הכתובות המאושרות.', adminRequiredShort: 'נדרשת הרשאת מנהל.' },
     registerMessages: { invalidInput: 'הזינו כתובת דוא״ל תקינה וסיסמה באורך 6 תווים לפחות.', mismatch: 'הסיסמאות אינן תואמות.', unavailable: 'ההרשמה אינה זמינה. בקשו מהמנהל לבדוק את שליחת הדוא״ל והגדרות החשבון.', submitted: 'אם ההרשמה זמינה, בדקו את הדוא״ל ואשרו את הכתובת. לאחר מכן חזרו לכאן והיכנסו. רק כתובות שאושרו על ידי המנהל יכולות לגשת למידע.', tempUnavailable: 'ההרשמה אינה זמינה כרגע. נסו שוב מאוחר יותר.' },
     documentMessages: { chooseFile: 'בחרו קובץ PDF, JPEG או PNG בגודל עד 10 מ״ב.', unsupported: 'תוכן הקובץ אינו PDF, JPEG או PNG נתמך.', notStarted: 'ההעלאה לא התחילה. בדקו את ההרשאות ונסו שוב.', uploadFailed: 'ההעלאה נכשלה. הרשומה הממתינה נשארת גלויה; לא נוספו עובדות רפואיות.', finalizeFailed: 'הקובץ הועבר אך לא ניתן היה לסיים את התהליך. בקשו מהמנהל לבדוק את הרשומה הממתינה.', stored: 'המסמך נשמר באופן פרטי. הוא לא פוענח ולא נוסף לעובדות רפואיות מאושרות.', unavailable: 'ההעלאה אינה זמינה. בדקו את החיבור וההרשאות.' },
+    messageUnknown: 'הגרסה הזו לא הצליחה להציג את תוצאת הפעולה. דבר לא הונח. רעננו את הדף ובדקו את התוצאה לפני ניסיון נוסף.',
+    auditActions: { 'patient.created': 'נוצרה רשומת מטופל', 'account.enabled.patient': 'הופעלה גישת מטופל', 'account.enabled.caregiver': 'הופעלה גישת בן משפחה', 'account.revoked': 'הגישה בוטלה', 'account.claimed': 'החשבון קושר לאחר אישור הדוא״ל' },
     categories: { profile: 'פרופיל', medication: 'תרופה', allergy: 'אלרגיה / תגובה', condition: 'היסטוריה רפואית', lab: 'בדיקת מעבדה', observation: 'מדידה', care_plan: 'תוכנית טיפול', timeline: 'אירוע רפואי', note: 'הערת משפחה' },
     provenanceLabels: { DOCUMENTED: 'מתועד', REPORTED: 'דווח', 'SEEN IN PHOTO': 'נראה בתמונה', ESTIMATED: 'מוערך', UNKNOWN: 'לא ידוע' },
   },
 };
+
+// Server actions return a key, never display text. An unrecognised key means this
+// build and the action disagree: show a localized generic notice rather than an
+// empty line, so a failed operation can never look like a silent success.
+export type MessageMap = 'adminMessages' | 'registerMessages' | 'documentMessages';
+export function actionMessage(locale: Locale, map: MessageMap, key: string): string {
+  if (!key) return '';
+  const messages = translations[locale][map] as Record<string, string>;
+  return messages[key] ?? translations[locale].messageUnknown;
+}
+
+// Audit rows are written by the database as stable codes. Unknown codes fall back
+// to the raw code: a new code must stay visible, never disappear from the log.
+export function auditLabel(locale: Locale, action: string): string {
+  const labels = translations[locale].auditActions as Record<string, string>;
+  return labels[action] ?? action;
+}
+
+// Timestamps are stored as UTC. The app runs on the family's own computer, so the
+// local time zone is theirs. An unparsable value is shown unchanged rather than dropped.
+export function formatTimestamp(locale: Locale, value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(parsed);
+}

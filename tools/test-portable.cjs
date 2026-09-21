@@ -2,8 +2,11 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { spawn, execFileSync } = require('node:child_process');
 const { chromium } = require('@playwright/test');
+const fs = require('node:fs');
 const root = path.resolve(process.argv[2]);
-const connected = require('node:fs').existsSync(path.join(root,'app-config.json'));
+const connected = fs.existsSync(path.join(root,'app-config.json'));
+// Optional: the version this package is expected to be, e.g. the release tag.
+const expectedVersion = process.argv[3] || process.env.EXPECTED_APP_VERSION || '';
 const child = spawn(path.join(root, 'runtime/node.exe'), [path.join(root, 'launch.cjs'), '--no-browser'], {
   cwd: root, windowsHide: true, env: { ...process.env, PATH: process.env.SystemRoot + '\\System32' },
 });
@@ -57,13 +60,28 @@ child.stdout.on('data', async data => {
       assert.equal(await page.locator('html').getAttribute('dir'),'rtl');
       assert.equal(await page.getByRole('heading',{name:'הקמת חשבון'}).count(),1);
       assert.equal(await page.locator('input[name=email]').getAttribute('dir'),'ltr','email stays left-to-right in Hebrew');
-      // A visible build identifier, readable before signing in.
+      // A visible build identifier, readable before signing in. The interface version is
+      // compiled from NEXT_PUBLIC_APP_VERSION while the files are stamped by -Version, so
+      // check exact agreement: a package that says one thing and shows another is not shippable.
       await page.goto(base+'/en/login');
       assert.ok(await page.locator('[data-app-version]').count()>0,'login must show the build version');
       const shown=await page.locator('[data-app-version]').getAttribute('data-app-version');
       assert.ok(shown && shown.length>0 && shown!=='0.4.0-dev','packaged build must carry a stamped version, got '+shown);
+      const stamped=fs.readFileSync(path.join(root,'VERSION.txt'),'utf8').trim();
+      const manifest=JSON.parse(fs.readFileSync(path.join(root,'MANIFEST.json'),'utf8'));
+      assert.equal(shown,stamped,'the interface version must equal VERSION.txt');
+      assert.equal(manifest.version,stamped,'MANIFEST.json must equal VERSION.txt');
+      assert.equal(manifest.clinicalReady,false,'a clinically ready package must never be produced here');
+      if(expectedVersion) assert.equal(stamped,expectedVersion,'the package is not the expected release version');
+      // The same stamp must be readable in every language, so the family can confirm
+      // which download they are running whichever language they use.
+      for(const locale of ['ru','he']){
+        await page.goto(base+'/'+locale+'/login');
+        assert.equal(await page.locator('[data-app-version]').getAttribute('data-app-version'),stamped,
+          'the version must agree on the '+locale+' sign-in screen');
+      }
       assert.deepEqual(failures,[]);
-      console.log('PASS: connected extracted app, enabled login, six-character registration minimum, anonymous admin/document denial, preview disabled, RU/HE localization with correct lang/dir and visible language selection, LTR email field in Hebrew, stamped build version, assets and blocked clinical readiness. Live authenticated acceptance still required.');
+      console.log('PASS: connected extracted app, enabled login, six-character registration minimum, anonymous admin/document denial, preview disabled, RU/HE localization with correct lang/dir and visible language selection, LTR email field in Hebrew, interface/VERSION.txt/MANIFEST agreement on '+stamped+', assets and blocked clinical readiness. Live authenticated acceptance still required.');
       return;
     }
     for (const locale of ['ru', 'en', 'he']) {

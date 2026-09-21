@@ -270,7 +270,13 @@ def main():
         print('  %-28s %3d' % (fn, n))
     print('  %-28s %3d' % ('TOTAL WRITTEN', total))
     m = re.search(r'Individual inputs executed[^|]*\|\s*(\d+)', exec_log)
-    print('  %-28s %3s   (see tests/EXECUTION_LOG.md)' % ('TOTAL EXECUTED', m.group(1) if m else '0'))
+    # This figure is inherited from the historical Project transcripts recorded in
+    # tests/EXECUTION_LOG.md. It is not a count of anything executed by the standalone
+    # application, and it is not the reconciled gating subset. Label it so the two are
+    # never read as the same number.
+    print('  %-28s %3s   (historical Project transcripts only, see tests/EXECUTION_LOG.md;'
+          % ('HISTORICAL EXECUTED', m.group(1) if m else '0'))
+    print('  %-28s     not executed by this application and not the gating subset)' % '')
     return 1 if FAILURES else 0
 
 

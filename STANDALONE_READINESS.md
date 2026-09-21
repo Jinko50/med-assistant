@@ -1,5 +1,22 @@
 # Standalone readiness — 2026-09-19
 
+Update 2026-09-20 (Claude Code, after independent Codex verification): a release
+**candidate** `0.4.1-localized-test.1` is built and smoke-tested locally but is **NOT
+published**. It resolves the secondary findings in docs/CLAUDE_RELEASE_REVIEW.md: the
+packaging script now refuses a build whose compiled `NEXT_PUBLIC_APP_VERSION` does not
+match `-Version`, the extracted-package smoke test asserts exact agreement between the
+interface stamp, VERSION.txt and MANIFEST.json, administration audit rows are shown with
+translated action labels and locale-formatted timestamps, and an unrecognised action
+message now renders a localized notice instead of a blank line. No database, account,
+grant, migration or published release was changed.
+
+**There is no chat or assistant conversation in any build.** The owner expects one; it does
+not exist. This is missing product functionality, not an installation fault. A
+record/document-management candidate is not the finished Med Assistant. Authenticated
+upload/download against Storage and cross-device visibility remain **UNVERIFIED** and are
+the blocking acceptance gate; see docs/CLAUDE_FINAL_RELEASE_OUTCOME.md for the exact
+remaining steps.
+
 Update 2026-09-20 (Claude Code): administration, registration and document screens are
 fully localized in RU/HE/EN with visible language selection and correct lang/dir; Hebrew is
 right-to-left with LTR email fields. Record and upload navigation is prominent after login,
@@ -30,7 +47,7 @@ The historical rows below do not constitute patient-use approval.
 | Caregiver record/reconciliation UI | apps/web/components/record-form.tsx | Build and readonly preview browser tests | PARTIAL | Real provider form save and reconciliation UI unverified/incomplete |
 | Patient mobile/accessible RU/HE/EN/RTL interface | apps/web/components; i18n; CSS; admin/register/document pages | Desktop/mobile browser and RTL tests; tests/unit/i18n.test.ts; packaged-ZIP smoke test asserts RU/HE rendering, lang/dir, language links and LTR email fields | PARTIAL | Real login, screen-reader/elderly usability, voice, final contrast review |
 | Deterministic emergency / medication engine | Existing prose preserved | Static document checks only | FAIL | Recognition, localized fixed responses, clinical review, residual risks |
-| AI provider orchestration and bounded retrieval | Planned | None | FAIL | Auth → safety → sources → provider → guards → audit |
+| AI provider orchestration and bounded retrieval | Planned | None | FAIL | No patient-facing chat exists in any build, though the owner expects one. Auth → safety → sources → provider → guards → audit must come first |
 | Secure documents and extraction/review | migration 003; documents pages/actions | Signature unit test and 3 SQL storage-policy tests; live private bucket verified; upload route now localized and reachable in two clicks from the record | PARTIAL | **Live Storage upload/download acceptance still unverified — needs the account holders' own sign-in.** Malware scanning, candidate-only extraction and review |
 | Audit/version history/concurrent edits | SQL save_record/revisions/audit; history route | PGlite stale-version and audit-failure rollback tests | PARTIAL | Live multi-session test, history pagination and source-rich historical view |
 | Executable clinical scenarios / actual outputs | Historical tests/EXECUTION_LOG.md; new inventory | No new model execution | PARTIAL | Full harness, trustworthy captures, 2 historical FAILs and 7 unrun parents |
