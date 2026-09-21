@@ -5,6 +5,20 @@ const { chromium } = require('@playwright/test');
 const fs = require('node:fs');
 const root = path.resolve(process.argv[2]);
 const connected = fs.existsSync(path.join(root,'app-config.json'));
+// No model-provider credential may ever ship in a download. The packager already refuses a
+// build containing any .env file; this checks the one file it does write deliberately, and
+// the whole package for the variable names, so a future change cannot quietly add one.
+{
+  const shipped = connected ? fs.readFileSync(path.join(root,'app-config.json'),'utf8') : '{}';
+  assert.equal(/MED_ASSISTANT_AI|api[-_ ]?key|sk-[A-Za-z0-9]/i.test(shipped), false,
+    'app-config.json must carry only the public Supabase URL and publishable key');
+  const walk = dir => fs.readdirSync(dir,{withFileTypes:true}).flatMap(entry => {
+    const full = path.join(dir, entry.name);
+    return entry.isDirectory() ? walk(full) : [full];
+  });
+  const leaked = walk(root).filter(file => /\.(env|pem|key)$/i.test(file));
+  assert.deepEqual(leaked, [], 'no credential file may be packaged');
+}
 // Optional: the version this package is expected to be, e.g. the release tag.
 const expectedVersion = process.argv[3] || process.env.EXPECTED_APP_VERSION || '';
 const child = spawn(path.join(root, 'runtime/node.exe'), [path.join(root, 'launch.cjs'), '--no-browser'], {

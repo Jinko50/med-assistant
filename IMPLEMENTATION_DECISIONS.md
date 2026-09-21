@@ -577,3 +577,69 @@ Every scenario depends on specific recorded state — the reconciliation date, t
 
 **IMPACT:**
 Reproducibility. All data fictional; `.gitignore` continues to block real filled files at `project/`.
+
+---
+
+## D-43 — One conversation replaces the daily screens, but the forms are kept behind a menu
+
+**DECISION:**
+`/[locale]/records/[patientId]/chat` is the landing screen and shows only the conversation, one text box, one attachment button, Send and the RU/HE/EN links. The daily home screen built one commit earlier now redirects to it. The record, documents, change history, the wellbeing check-in form and user administration moved into a `<details>` Menu; none of them was deleted.
+
+**REASON:**
+The owner asked for the separate daily-use screens and structured entry forms to be replaced by one familiar conversation. Deleting the check-in page as well would have destroyed the only way to read check-ins already stored by `wellbeing_reports`, and would have removed working, tested functionality to satisfy the letter of a request about the *main* path. Keeping it one level down satisfies both: nobody meets a form on the way in, and nothing that worked stopped working.
+
+**IMPACT:**
+The main screen is one surface. `/home` is a redirect, so existing bookmarks and earlier release notes still land somewhere useful. A browser test asserts the redirect; a structural test asserts the main screen has exactly one textarea, one file input and one submit button.
+
+---
+
+## D-44 — A unit is written, fixed by notation, or absent — never inferred from the value
+
+**DECISION:**
+`packages/domain/measurements.ts` records `unit` together with `unitStated`. A unit is only marked as stated when the person actually wrote it. `135/80` yields `mmHg` and a pulse yields `/min` because the notation fixes them, recorded as *not* stated. "температура 37.8" yields an empty unit and `needsUnit: true`. No unit is ever derived from the magnitude of the number.
+
+**REASON:**
+"Never invent units, dates or medical facts" cannot be a convention; it has to be a property of the data structure, or it erodes the first time a screen needs something to display. 37.8 is overwhelmingly likely to be Celsius and 98.6 Fahrenheit — which is exactly why guessing is tempting and exactly why it must not happen in a record a clinician may later read.
+
+**IMPACT:**
+A missing unit becomes the one short clarification the reply is permitted to ask, so the gap is visible rather than papered over. The confirmation card states who supplied the unit. A bare "degrees"/"градусов"/"מעלות" is filled in as °C but marked as supplied by the app, so the Correct control can change it.
+
+---
+
+## D-45 — Readings are proposals; only a person's review makes them memory
+
+**DECISION:**
+Migration 007 stores conversation lines in `conversation_messages` and what the reader saw in `conversation_facts`, always in state `proposed`. The row-level policy refuses an insert that arrives already reviewed. The only transition is `review_conversation_fact`, which works once, requires current access, and records who reviewed it and when. Neither table has an update or delete grant, and nothing in the conversation path writes `medical_records`.
+
+**REASON:**
+The owner required that routine conversational use must not silently alter confirmed medical history, and that document-derived diagnoses, medications and restrictions stay proposed until reviewed. Enforcing that in the application alone would leave it true only for as long as every future caller remembers.
+
+**IMPACT:**
+Ordinary talk produces no confirmation card at all — only a recognised measurement does — so the conversation does not become a form. A change of mind after a review is a new message rather than an overwrite, so the earlier decision stays visible. 14 SQL tests cover this, including the full journey across two accounts.
+
+---
+
+## D-46 — The model service needs configuration AND consent, and there is none
+
+**DECISION:**
+`apps/web/lib/assistant.ts` is the only place that may reach an external provider. It requires `MED_ASSISTANT_AI_PROVIDER`, `MED_ASSISTANT_AI_MODEL` and `MED_ASSISTANT_AI_KEY`, and separately `MED_ASSISTANT_AI_CONSENT` naming the same provider. All four are read from the server environment at run time; none is bundled into the Windows download or committed. With any of them missing the conversation answers free questions with "I cannot answer questions yet", and an uploaded file is described as stored but explicitly **not** read.
+
+**REASON:**
+The owner required that external recipients of document, photo or conversation data be named and consented to before real patient information is transmitted, and that secrets never ship in the download or the public repository. A single key check would turn a configuration accident into a disclosure. The alternative to an honest refusal — canned sympathetic text that reads like an answer — is worse than saying nothing, because it implies a capability that does not exist.
+
+**IMPACT:**
+No model has been called and no generated answer has been observed, so nothing about model behaviour is claimed. The screen names the recipient when the gates are open and says "nothing leaves this computer" when they are not. The typed path is nevertheless fully real end to end: reading, proposing, reviewing and later retrieval all work with no provider at all.
+
+---
+
+## D-47 — "Uploaded" and "read" are different words in every language
+
+**DECISION:**
+The conversation reports an attachment as `chatUploadSending` → `chatUploadStored`, and the reply says `replyAttachmentStored` followed by `replyAttachmentNotRead` while no reader exists. The server re-reads the document row and treats a file as stored only when its own `state` is `uploaded`; the browser's claim is never sufficient. A failure keeps both the text and the file, and Retry resumes from the already-uploaded object rather than sending the bytes again.
+
+**REASON:**
+"Do not imply the app has read an attachment until processing succeeds." A 50 MB scan takes long enough that a progress line is the only thing the reader has to go on, and a single word covering both states would be a false claim at exactly the moment someone is trusting it.
+
+**IMPACT:**
+A test asserts the two strings differ in all three languages and that the failure path returns before the draft is cleared. Re-uploading 40 MB after a failed send cannot happen.
+

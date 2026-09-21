@@ -20,4 +20,30 @@ for (const table of ['patients', 'patient_access', 'record_sources', 'medical_re
   assert.equal(result.data.code, '42501', `${table}: expected permission denial, not a missing-table error`);
   console.log(`PASS: ${table} exists and denies anonymous reads.`);
 }
+
+// Tables added by migrations that may not have been applied yet. A missing one is reported
+// as a pending migration, not as a failure: the application degrades to a clear message
+// rather than an error when the table is absent, and this check must say which is the case.
+const pending = [];
+for (const [table, migration] of [
+  ['wellbeing_reports', '006_wellbeing_checkins.sql'],
+  ['conversation_messages', '007_conversation.sql'],
+  ['conversation_facts', '007_conversation.sql'],
+]) {
+  const result = await request(`/rest/v1/${table}?select=*&limit=0`);
+  if (result.data?.code === '42501') {
+    console.log(`PASS: ${table} exists and denies anonymous reads.`);
+  } else if (result.status === 404 || result.data?.code === 'PGRST205') {
+    pending.push(`${table} (apply database/migrations/${migration})`);
+    console.log(`PENDING: ${table} does not exist yet - ${migration} has not been applied.`);
+  } else {
+    assert.fail(`${table}: unexpected anonymous response ${result.status} ${result.data?.code ?? ''}`);
+  }
+}
+if (pending.length) {
+  console.log('');
+  console.log('NOT READY: these migrations must be applied in the Supabase SQL editor:');
+  for (const item of pending) console.log(`  - ${item}`);
+  console.log('Until then the conversation stores nothing and says so on screen.');
+}
 console.log('This does not establish authenticated access, write policies, or clinical readiness.');

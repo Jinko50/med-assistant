@@ -20,10 +20,10 @@ export default async function Workspace({ params }: { params: Promise<{ locale: 
     if (dbError) return <AccessMessage locale={locale} message="unavailable"/>;
     patientId = data?.[0]?.patient_id;
   } catch { return <AccessMessage locale={locale} message="unavailable"/>; }
-  // Everyday use comes first. Anyone with a record lands on the daily home screen, where
-  // the ordinary things are one tap away; user management stays reachable but secondary.
-  // An administrator with no record access still lands on administration.
-  if (patientId) redirect(`/${locale}/records/${patientId}/home`);
+  // Everyday use comes first, and everyday use is now one conversation. Anyone with a
+  // record lands there; the record, documents, history and user management stay reachable
+  // behind its Menu. An administrator with no record access still lands on administration.
+  if (patientId) redirect(`/${locale}/records/${patientId}/chat`);
   if (admin) redirect(`/${locale}/admin`);
   return <AccessMessage locale={locale} message="noAccess"/>;
 }

@@ -1,5 +1,54 @@
 # Standalone readiness — 2026-09-19
 
+Update 2026-09-21 (Claude Code, milestone 10): **the conversation is now the product.** The
+separate daily home screen and the structured check-in form are no longer the main path;
+`/[locale]/records/[patientId]/chat` is where signing in lands, and it shows only the
+conversation, one text box, one attachment button, Send and the RU/HE/EN links. The record,
+documents, change history, the check-in form and user administration moved into a Menu.
+
+What is real, not cosmetic:
+
+* **Measurement reading.** `packages/domain/measurements.ts` reads blood pressure, pulse,
+  temperature, weight, blood sugar and oxygen saturation out of free text in all three
+  languages, deterministically and offline. A number without a keyword is never a reading; a
+  unit is either written by the person, fixed by the notation, or reported as ABSENT and
+  turned into the single clarification the reply is allowed to ask. No unit is inferred from
+  magnitude and no calendar date is ever produced — "this morning" stays the person's words.
+  30 unit tests.
+* **Reviewed memory.** Migration 007 stores conversation lines and, separately, what the
+  reader believed it saw, as `proposed` facts. A proposal becomes `confirmed`, `corrected`
+  or `declined` only through `review_conversation_fact`, once, by a named person. Neither
+  table has an update or delete grant, and nothing in this path writes `medical_records`, so
+  ordinary conversation cannot alter confirmed medical history. 14 SQL tests, including the
+  journey: write → propose → confirm → retrieve in a later session, by a different account.
+* **Attachments.** The composer reuses the existing direct-to-Storage upload, so a 50 MB
+  original still never passes through the app server. The conversation shows "sending", then
+  "file uploaded" — and says explicitly that the contents have **not** been read. A failure
+  keeps both the text and the file, and Retry resumes rather than re-sending bytes that
+  already arrived.
+* **Ordering.** Authorize → deterministic safety screen → deterministic reading →
+  deterministic reply plan → attachment state re-read from the database → model. A safety
+  match replaces the reply entirely and never also asks a question.
+
+What is honestly not real: **there is no model service and no document reader.** So a free
+question is answered with "I cannot answer questions yet", and an uploaded file is described
+as stored, never as read. `apps/web/lib/assistant.ts` is the complete, gated integration —
+it needs `MED_ASSISTANT_AI_PROVIDER`, `MED_ASSISTANT_AI_MODEL`, `MED_ASSISTANT_AI_KEY` and a
+separate `MED_ASSISTANT_AI_CONSENT` naming the same provider before one byte leaves the
+machine, and it reads them from the server environment so nothing is ever bundled into the
+Windows ZIP or the public repository. The screen names the recipient when it is on and says
+"nothing leaves this computer" when it is off.
+
+**Migrations 006 and 007 are NOT applied to the live project** — verified read-only today by
+`node --env-file=apps/web/.env.local tools/check-live-backend.mjs`, which now reports them as
+PENDING by name. Until they are applied in the Supabase SQL editor the conversation stores
+nothing and says so on screen instead of failing. The live signed-in journey therefore
+remains **UNVERIFIED**; that is the one blocking step, and it needs database access this
+session does not have.
+
+Checks run for this change: 102 unit, 41 SQL, 18 browser (desktop and mobile), 52 consistency
+checks, typecheck and a clean build.
+
 Update 2026-09-21 later (Claude Code): the owner asked for 50 MB originals, so the cap was
 raised from 10 MiB to 50,000,000 bytes and the transfer was moved off the app server — the
 browser now uploads straight to Storage with a short-lived signed URL, which removes the
@@ -68,13 +117,13 @@ The historical rows below do not constitute patient-use approval.
 | Server authorization, RLS and revocation | apps/web/lib/dal.ts; database migration | PGlite policy tests + unauthorized-page browser checks | PARTIAL | Verify real Supabase HTTP routes, expiry and storage access |
 | Structured persistence, provenance, UNKNOWN, conflicts | packages/domain/record.ts; database/migrations/001_record_foundation.sql | Runtime validation + actual SQL constraints/transactions tested | PARTIAL | Generic record foundation; full clinical entities/reconciliation/candidates absent |
 | Caregiver record/reconciliation UI | apps/web/components/record-form.tsx | Build and readonly preview browser tests | PARTIAL | Real provider form save and reconciliation UI unverified/incomplete |
-| Patient mobile/accessible RU/HE/EN/RTL interface | apps/web/components; i18n; CSS; admin/register/document pages | Desktop/mobile browser and RTL tests; tests/unit/i18n.test.ts; packaged-ZIP smoke test asserts RU/HE rendering, lang/dir, language links and LTR email fields | PARTIAL | Real login, screen-reader/elderly usability, voice, final contrast review |
-| Deterministic emergency / medication engine | Existing prose preserved | Static document checks only | FAIL | Recognition, localized fixed responses, clinical review, residual risks |
-| AI provider orchestration and bounded retrieval | Planned | None | FAIL | No patient-facing chat exists in any build, though the owner expects one. Auth → safety → sources → provider → guards → audit must come first |
+| Patient mobile/accessible RU/HE/EN/RTL interface | apps/web/components (conversation, composer, confirmation cards); i18n; CSS; admin/register/document pages | Desktop/mobile browser and RTL tests; tests/unit/i18n.test.ts; packaged-ZIP smoke test asserts RU/HE rendering, lang/dir, language links and LTR email fields | PARTIAL | Real login, screen-reader/elderly usability, voice, final contrast review |
+| Deterministic emergency / medication engine | packages/domain/safety.ts; packages/domain/reply.ts; conversation and check-in actions | 30 adversarial unit tests across RU/HE/EN (negation, history, Hebrew prefixes, truncation); 15 reply-ordering tests; the screen's decision is stored per message for audit | PARTIAL | Recognition remains a residual risk — `none` means nothing matched, never "safe". Phrase catalogue and escalation wording are still **unreviewed by a clinician or pharmacist** (B-01/B-02) |
+| AI provider orchestration and bounded retrieval | apps/web/lib/assistant.ts; apps/web/app/conversation-actions.ts | 14 structural tests assert the order (authorize → screen → read → plan → store → model) against the stripped source, that only `confirmed`/`corrected` facts are sent as grounding, that context is labelled as data not instructions, and that both the configuration and consent gates are required | PARTIAL | **No provider is configured, so no model has ever been called and no generated answer has been observed.** Document and photo reading do not exist; output guards, per-patient consent capture and provider fault injection are unwritten |
 | Secure documents and extraction/review | migrations 003-004; documents pages/actions; direct signed-URL upload | 43 unit tests incl. exact size boundaries, retry and interruption handling; 4 SQL storage/size tests; request and CSP probe against both the built and the packaged app; live private bucket verified | FAIL | **The repaired path has still not been retested by a signed-in upload/download.** Migration 004 is not yet applied to the live project, so >10 MiB is still refused there. Supported cap is now 50 MB once it is applied. Malware scanning, resumable transfer, candidate-only extraction and review |
 | Audit/version history/concurrent edits | SQL save_record/revisions/audit; history route | PGlite stale-version and audit-failure rollback tests | PARTIAL | Live multi-session test, history pagination and source-rich historical view |
 | Executable clinical scenarios / actual outputs | Historical tests/EXECUTION_LOG.md; new inventory | No new model execution | PARTIAL | Full harness, trustworthy captures, 2 historical FAILs and 7 unrun parents |
-| Integration / end-to-end tests | tests/integration; tests/e2e | SQL and browser tests run locally | PARTIAL | Full authenticated Supabase flow and model tests remain |
+| Integration / end-to-end tests | tests/integration; tests/e2e | 102 unit, 41 SQL and 18 browser tests run locally; the conversation journey (propose → review → retrieve later, across accounts) runs against the real migration SQL in PGlite | PARTIAL | The journey has **not** been run over HTTP against the live project: migrations 006/007 are unapplied and signing in needs the account holders' own passwords |
 | Dependency and operational failure behavior | Implementation plan | No fault injection | FAIL | Provider, DB, storage, extraction, session, migration and edit failures |
 | Secrets protection and security scanning | .gitignore; npm lock; transfer scanner | Dependency audit and narrow known-pattern scans | PARTIAL | Full secret/privacy review and deployed security hardening |
 | Reproducible app build and checks | package/lock; setup scripts; CI | Local build, typecheck, unit, SQL, browser checks | PASS | Remote CI and destination setup still need execution |

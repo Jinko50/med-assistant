@@ -45,7 +45,7 @@ export default async function CheckIn({ params }: { params: Promise<{ locale: st
 
   return <main className="page-content" lang={locale} dir={direction(locale)} style={{maxWidth:760,margin:'auto'}}>
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:16,flexWrap:'wrap'}}>
-      <Link href={`/${locale}/records/${patientId}/home`}>{t.back}</Link>
+      <Link href={`/${locale}/records/${patientId}/chat`}>{t.back}</Link>
       <LanguageLinks locale={locale} path={`/records/${patientId}/checkin`}/>
     </div>
     <h1>{t.checkInTitle}</h1>

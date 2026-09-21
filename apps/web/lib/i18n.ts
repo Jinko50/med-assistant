@@ -84,6 +84,37 @@ const en = {
   adminMessages: { invalidLanguage: 'Invalid language.', checkFields: 'Check the email address, patient and role.', conflict: 'Another change was saved first. Refresh and try again.', duplicatePatient: 'This patient already has an active patient account. Revoke that account first.', notChanged: 'Account was not changed. Check access and try again.', adminRequired: 'Administrator access is required. Nothing was changed.', saved: 'Saved. Access changes apply immediately.', enterName: 'Enter a patient display name.', patientNotCreated: 'Patient was not created.', patientCreated: 'Patient created. Add the approved email addresses below.', adminRequiredShort: 'Administrator access is required.' },
   registerMessages: { invalidInput: 'Enter a valid email and a password of at least 6 characters.', mismatch: 'Passwords do not match.', unavailable: 'Registration is unavailable. Ask your administrator to check email delivery and account settings.', submitted: 'If registration is available, check your email and confirm your address. Then return here and sign in. Only administrator-approved addresses can access records.', tempUnavailable: 'Registration is temporarily unavailable. Try again later.' },
   documentMessages: { tooLarge: 'That file is larger than 50 MB, so nothing was sent. Choose a smaller file.', interrupted: 'The transfer stopped before it finished. Nothing was added to the record. Check the connection and try again.', storageRejected: 'Storage refused the file. If it is close to 50 MB, the database limit may not have been raised yet — tell the person who administers the app.', verifyFailed: 'The file arrived but could not be checked, so it was not confirmed. Try uploading it again.', chooseFile: 'Choose a PDF, JPEG or PNG file up to 10 MB.', unsupported: 'The file content is not a supported PDF, JPEG or PNG.', notStarted: 'Upload was not started. Check your access and try again.', uploadFailed: 'Upload failed. The pending entry remains visible; no medical facts were added.', finalizeFailed: 'The file was transferred but could not be finalized. Ask the administrator to inspect the pending entry.', stored: 'Document stored privately. It has not been interpreted or added to confirmed medical facts.', unavailable: 'Upload unavailable. Check your connection and access.' },
+  chatTitle: 'Med Assistant', chatHeading: 'Talk to me',
+  chatPlaceholder: 'Write how you feel, your measurements, or a question…',
+  chatSend: 'Send', chatSending: 'Sending…', chatAttach: 'Attach a document or photo',
+  chatAttachRemove: 'Remove', chatRetry: 'Try again', chatMenu: 'Menu', chatClose: 'Close',
+  chatYou: 'You', chatAssistant: 'Assistant',
+  chatOpening: 'Write to me in Russian, Hebrew or English. You can tell me how you feel, write down a measurement, or attach a document or a photograph.',
+  chatNeedsJs: 'The conversation needs JavaScript enabled in this browser. The record and document pages still work without it.',
+  chatUploadSending: 'Sending the file…', chatUploadStored: 'File uploaded',
+  chatUploadReading: 'Reading the file…', chatUploadKept: 'Your message and the file are still here.',
+  chatAttachment: 'Attachment',
+  replyRead: 'This is what I read in your message:',
+  replyNothingRead: 'I have kept what you wrote. I did not recognise a measurement in it.',
+  replyNoAssistant: 'I cannot answer questions yet — the assistant service is not switched on for this installation. I can still read measurements you write down, and keep your documents.',
+  replyAttachmentStored: 'Your file was uploaded and stored privately.',
+  replyAttachmentNotRead: 'I have not read what is inside it. Reading documents and photographs is not switched on yet.',
+  replyAttachmentQueued: 'I am reading it now.',
+  replyAttachmentFailed: 'The file did not finish uploading, so nothing was stored.',
+  replyAssistantFailed: 'I could not reach the assistant service just now. Nothing was changed.',
+  replyClarifyUnit: 'One thing: you wrote {value} without a unit. What unit was that?',
+  confirmHeading: 'I understood:', confirmAccept: 'Confirm', confirmCorrect: 'Correct',
+  confirmSave: 'Save', confirmCancel: 'Cancel', confirmNotMeasurement: 'This was not a measurement',
+  confirmValue: 'Value', confirmUnit: 'Unit',
+  confirmPending: 'Not confirmed yet', confirmConfirmed: 'Confirmed', confirmCorrected: 'Corrected', confirmDeclined: 'Removed',
+  confirmNote: 'Confirming keeps this in your own history. It does not change your medical record.',
+  unitSupplied: 'unit filled in by the app', unitMissing: 'no unit written', whenMissing: 'time not stated',
+  measurementKinds: { blood_pressure: 'Blood pressure', pulse: 'Pulse', temperature: 'Temperature', weight: 'Weight', glucose: 'Blood sugar', oxygen: 'Oxygen saturation' },
+  memoryHeading: 'What you have confirmed', memoryNone: 'Nothing has been confirmed yet.',
+  memoryNote: 'These are your own reports, kept with the date you sent them. They are not part of your medical record.',
+  aiOff: 'Nothing you write here leaves this computer. The assistant service is not switched on.',
+  aiOn: 'When you ask a question, what you write is sent to {recipient} to compose the answer.',
+  chatMessages: { sendInvalid: 'That message could not be read, so nothing was saved.', sendEmpty: 'Write something, or attach a file, before sending.', sendDenied: 'Your access has changed. Sign in again or ask the person who manages access.', sendUnavailable: 'That could not be sent just now. Your message is still here — try again.', sendUnprepared: 'The conversation is not set up in the database yet. Ask the person who administers the app to apply the latest update.', reviewFailed: 'That could not be saved just now. Try again.', reviewDone: 'Saved.', reviewGone: 'This was already reviewed, so it was left as it is.' },
   errorTitle: 'Something went wrong on this screen.',
   errorBody: 'The last action did not complete and nothing was saved or uploaded. You can try again, or go back and continue. If it keeps happening, tell the person who set up this app what you were doing.',
   retry: 'Try again',
@@ -143,6 +174,37 @@ export const translations = {
     adminMessages: { invalidLanguage: 'Неверный язык.', checkFields: 'Проверьте адрес, пациента и роль.', conflict: 'Кто-то уже сохранил изменение. Обновите страницу и попробуйте снова.', duplicatePatient: 'У этого пациента уже есть активный аккаунт пациента. Сначала отзовите его.', notChanged: 'Доступ не изменён. Проверьте права и попробуйте снова.', adminRequired: 'Нужны права администратора. Ничего не изменено.', saved: 'Сохранено. Изменения доступа действуют сразу.', enterName: 'Введите имя пациента.', patientNotCreated: 'Карта пациента не создана.', patientCreated: 'Карта создана. Добавьте одобренные адреса ниже.', adminRequiredShort: 'Нужны права администратора.' },
     registerMessages: { invalidInput: 'Введите правильный адрес и пароль не менее 6 символов.', mismatch: 'Пароли не совпадают.', unavailable: 'Регистрация недоступна. Попросите администратора проверить отправку почты и настройки аккаунтов.', submitted: 'Если регистрация доступна, проверьте почту и подтвердите адрес. Затем вернитесь сюда и войдите. Доступ к записям получают только адреса, одобренные администратором.', tempUnavailable: 'Регистрация временно недоступна. Попробуйте позже.' },
     documentMessages: { tooLarge: 'Этот файл больше 50 МБ, поэтому ничего не отправлено. Выберите файл меньшего размера.', interrupted: 'Передача прервалась до завершения. В записи ничего не добавлено. Проверьте соединение и попробуйте снова.', storageRejected: 'Хранилище отклонило файл. Если он близок к 50 МБ, возможно, лимит в базе данных ещё не увеличен — сообщите администратору приложения.', verifyFailed: 'Файл получен, но проверить его не удалось, поэтому он не подтверждён. Попробуйте загрузить ещё раз.', chooseFile: 'Выберите файл PDF, JPEG или PNG размером до 10 МБ.', unsupported: 'Содержимое файла не является поддерживаемым PDF, JPEG или PNG.', notStarted: 'Загрузка не начата. Проверьте доступ и попробуйте снова.', uploadFailed: 'Загрузка не удалась. Незавершённая запись осталась видимой; медицинские сведения не добавлены.', finalizeFailed: 'Файл передан, но завершить обработку не удалось. Попросите администратора проверить незавершённую запись.', stored: 'Документ сохранён приватно. Он не расшифрован и не добавлен в подтверждённые медицинские сведения.', unavailable: 'Загрузка недоступна. Проверьте соединение и доступ.' },
+    chatTitle: 'Мед Ассистент', chatHeading: 'Поговорите со мной',
+    chatPlaceholder: 'Напишите, как вы себя чувствуете, свои измерения или вопрос…',
+    chatSend: 'Отправить', chatSending: 'Отправка…', chatAttach: 'Прикрепить документ или фото',
+    chatAttachRemove: 'Убрать', chatRetry: 'Попробовать снова', chatMenu: 'Меню', chatClose: 'Закрыть',
+    chatYou: 'Вы', chatAssistant: 'Помощник',
+    chatOpening: 'Пишите мне по-русски, на иврите или по-английски. Расскажите, как вы себя чувствуете, запишите измерение или прикрепите документ либо фотографию.',
+    chatNeedsJs: 'Для разговора нужен включённый JavaScript. Записи и документы работают и без него.',
+    chatUploadSending: 'Отправляю файл…', chatUploadStored: 'Файл загружен',
+    chatUploadReading: 'Читаю файл…', chatUploadKept: 'Ваше сообщение и файл сохранены здесь.',
+    chatAttachment: 'Вложение',
+    replyRead: 'Вот что я прочитал в вашем сообщении:',
+    replyNothingRead: 'Я сохранил то, что вы написали. Измерений я в нём не распознал.',
+    replyNoAssistant: 'Пока я не могу отвечать на вопросы — служба помощника не включена в этой установке. Я по-прежнему распознаю записанные вами измерения и храню ваши документы.',
+    replyAttachmentStored: 'Ваш файл загружен и сохранён приватно.',
+    replyAttachmentNotRead: 'Я не читал его содержимое. Чтение документов и фотографий пока не включено.',
+    replyAttachmentQueued: 'Читаю его сейчас.',
+    replyAttachmentFailed: 'Файл не догрузился, поэтому ничего не сохранено.',
+    replyAssistantFailed: 'Сейчас не удалось связаться со службой помощника. Ничего не изменено.',
+    replyClarifyUnit: 'Один вопрос: вы написали {value} без единицы измерения. В каких единицах это было?',
+    confirmHeading: 'Я понял так:', confirmAccept: 'Подтвердить', confirmCorrect: 'Исправить',
+    confirmSave: 'Сохранить', confirmCancel: 'Отмена', confirmNotMeasurement: 'Это не измерение',
+    confirmValue: 'Значение', confirmUnit: 'Единица',
+    confirmPending: 'Пока не подтверждено', confirmConfirmed: 'Подтверждено', confirmCorrected: 'Исправлено', confirmDeclined: 'Убрано',
+    confirmNote: 'Подтверждение сохраняет это в вашей истории. Медицинские записи при этом не меняются.',
+    unitSupplied: 'единицу подставило приложение', unitMissing: 'единица не указана', whenMissing: 'время не указано',
+    measurementKinds: { blood_pressure: 'Давление', pulse: 'Пульс', temperature: 'Температура', weight: 'Вес', glucose: 'Сахар в крови', oxygen: 'Сатурация' },
+    memoryHeading: 'Что вы подтвердили', memoryNone: 'Пока ничего не подтверждено.',
+    memoryNote: 'Это ваши собственные сообщения с датой отправки. В медицинские записи они не входят.',
+    aiOff: 'Ничего из написанного здесь не покидает этот компьютер. Служба помощника не включена.',
+    aiOn: 'Когда вы задаёте вопрос, написанное отправляется в {recipient} для подготовки ответа.',
+    chatMessages: { sendInvalid: 'Сообщение не удалось прочитать, поэтому ничего не сохранено.', sendEmpty: 'Напишите что-нибудь или прикрепите файл перед отправкой.', sendDenied: 'Ваш доступ изменился. Войдите снова или обратитесь к ответственному за доступ.', sendUnavailable: 'Сейчас отправить не удалось. Ваше сообщение сохранено — попробуйте ещё раз.', sendUnprepared: 'Разговор ещё не настроен в базе данных. Попросите администратора применить последнее обновление.', reviewFailed: 'Сейчас сохранить не удалось. Попробуйте ещё раз.', reviewDone: 'Сохранено.', reviewGone: 'Это уже проверено, поэтому оставлено без изменений.' },
     errorTitle: 'На этом экране произошла ошибка.',
     errorBody: 'Последнее действие не завершилось; ничего не сохранено и не загружено. Попробуйте ещё раз или вернитесь назад. Если это повторяется, расскажите тому, кто настраивал приложение, что вы делали.',
     retry: 'Попробовать снова',
@@ -194,6 +256,37 @@ export const translations = {
     adminMessages: { invalidLanguage: 'שפה לא תקינה.', checkFields: 'בדקו את כתובת הדוא״ל, המטופל והתפקיד.', conflict: 'שינוי אחר נשמר לפני כן. רעננו ונסו שוב.', duplicatePatient: 'למטופל זה כבר יש חשבון מטופל פעיל. בטלו אותו תחילה.', notChanged: 'ההרשאה לא שונתה. בדקו גישה ונסו שוב.', adminRequired: 'נדרשת הרשאת מנהל. דבר לא שונה.', saved: 'נשמר. שינויי הגישה חלים מיד.', enterName: 'הזינו שם מטופל לתצוגה.', patientNotCreated: 'רשומת המטופל לא נוצרה.', patientCreated: 'רשומת המטופל נוצרה. הוסיפו למטה את הכתובות המאושרות.', adminRequiredShort: 'נדרשת הרשאת מנהל.' },
     registerMessages: { invalidInput: 'הזינו כתובת דוא״ל תקינה וסיסמה באורך 6 תווים לפחות.', mismatch: 'הסיסמאות אינן תואמות.', unavailable: 'ההרשמה אינה זמינה. בקשו מהמנהל לבדוק את שליחת הדוא״ל והגדרות החשבון.', submitted: 'אם ההרשמה זמינה, בדקו את הדוא״ל ואשרו את הכתובת. לאחר מכן חזרו לכאן והיכנסו. רק כתובות שאושרו על ידי המנהל יכולות לגשת למידע.', tempUnavailable: 'ההרשמה אינה זמינה כרגע. נסו שוב מאוחר יותר.' },
     documentMessages: { tooLarge: 'הקובץ גדול מ־50 מ״ב, ולכן לא נשלח דבר. בחרו קובץ קטן יותר.', interrupted: 'ההעברה נעצרה לפני שהסתיימה. דבר לא נוסף לרשומה. בדקו את החיבור ונסו שוב.', storageRejected: 'האחסון דחה את הקובץ. אם הוא קרוב ל־50 מ״ב, ייתכן שמגבלת מסד הנתונים טרם הועלתה — פנו למנהל האפליקציה.', verifyFailed: 'הקובץ הגיע אך לא ניתן היה לבדוק אותו, ולכן הוא לא אושר. נסו להעלות שוב.', chooseFile: 'בחרו קובץ PDF, JPEG או PNG בגודל עד 10 מ״ב.', unsupported: 'תוכן הקובץ אינו PDF, JPEG או PNG נתמך.', notStarted: 'ההעלאה לא התחילה. בדקו את ההרשאות ונסו שוב.', uploadFailed: 'ההעלאה נכשלה. הרשומה הממתינה נשארת גלויה; לא נוספו עובדות רפואיות.', finalizeFailed: 'הקובץ הועבר אך לא ניתן היה לסיים את התהליך. בקשו מהמנהל לבדוק את הרשומה הממתינה.', stored: 'המסמך נשמר באופן פרטי. הוא לא פוענח ולא נוסף לעובדות רפואיות מאושרות.', unavailable: 'ההעלאה אינה זמינה. בדקו את החיבור וההרשאות.' },
+    chatTitle: 'עוזר רפואי', chatHeading: 'דברו איתי',
+    chatPlaceholder: 'כתבו איך אתם מרגישים, את המדידות שלכם או שאלה…',
+    chatSend: 'שליחה', chatSending: 'שולח…', chatAttach: 'צירוף מסמך או תמונה',
+    chatAttachRemove: 'הסרה', chatRetry: 'נסו שוב', chatMenu: 'תפריט', chatClose: 'סגירה',
+    chatYou: 'אתם', chatAssistant: 'העוזר',
+    chatOpening: 'אפשר לכתוב לי ברוסית, בעברית או באנגלית. ספרו לי איך אתם מרגישים, רשמו מדידה, או צרפו מסמך או תמונה.',
+    chatNeedsJs: 'השיחה זקוקה ל־JavaScript פעיל בדפדפן. דפי הרשומה והמסמכים פועלים גם בלעדיו.',
+    chatUploadSending: 'שולח את הקובץ…', chatUploadStored: 'הקובץ הועלה',
+    chatUploadReading: 'קורא את הקובץ…', chatUploadKept: 'ההודעה והקובץ שלכם נשמרו כאן.',
+    chatAttachment: 'קובץ מצורף',
+    replyRead: 'זה מה שקראתי בהודעה שלכם:',
+    replyNothingRead: 'שמרתי את מה שכתבתם. לא זיהיתי בו מדידה.',
+    replyNoAssistant: 'עדיין איני יכול לענות על שאלות — שירות העוזר אינו מופעל בהתקנה הזו. אני עדיין מזהה מדידות שתכתבו ושומר את המסמכים שלכם.',
+    replyAttachmentStored: 'הקובץ שלכם הועלה ונשמר באופן פרטי.',
+    replyAttachmentNotRead: 'לא קראתי מה יש בתוכו. קריאת מסמכים ותמונות עדיין אינה מופעלת.',
+    replyAttachmentQueued: 'אני קורא אותו עכשיו.',
+    replyAttachmentFailed: 'הקובץ לא סיים לעלות, ולכן דבר לא נשמר.',
+    replyAssistantFailed: 'לא הצלחתי להגיע לשירות העוזר כרגע. דבר לא שונה.',
+    replyClarifyUnit: 'דבר אחד: כתבתם {value} בלי יחידה. באילו יחידות זה היה?',
+    confirmHeading: 'כך הבנתי:', confirmAccept: 'אישור', confirmCorrect: 'תיקון',
+    confirmSave: 'שמירה', confirmCancel: 'ביטול', confirmNotMeasurement: 'זו לא הייתה מדידה',
+    confirmValue: 'ערך', confirmUnit: 'יחידה',
+    confirmPending: 'עדיין לא אושר', confirmConfirmed: 'אושר', confirmCorrected: 'תוקן', confirmDeclined: 'הוסר',
+    confirmNote: 'האישור שומר את זה בהיסטוריה שלכם. הוא אינו משנה את הרשומה הרפואית.',
+    unitSupplied: 'היחידה הושלמה על ידי האפליקציה', unitMissing: 'לא נכתבה יחידה', whenMissing: 'לא צוין זמן',
+    measurementKinds: { blood_pressure: 'לחץ דם', pulse: 'דופק', temperature: 'חום', weight: 'משקל', glucose: 'סוכר בדם', oxygen: 'רוויון חמצן' },
+    memoryHeading: 'מה שאישרתם', memoryNone: 'עדיין לא אושר דבר.',
+    memoryNote: 'אלה הדיווחים שלכם, עם התאריך שבו נשלחו. הם אינם חלק מהרשומה הרפואית.',
+    aiOff: 'שום דבר שתכתבו כאן אינו יוצא מהמחשב הזה. שירות העוזר אינו מופעל.',
+    aiOn: 'כששואלים שאלה, מה שכתבתם נשלח אל {recipient} כדי להרכיב את התשובה.',
+    chatMessages: { sendInvalid: 'לא ניתן היה לקרוא את ההודעה, ולכן דבר לא נשמר.', sendEmpty: 'כתבו משהו או צרפו קובץ לפני השליחה.', sendDenied: 'ההרשאות שלכם השתנו. התחברו שוב או פנו למי שמנהל את הגישה.', sendUnavailable: 'לא ניתן היה לשלוח כרגע. ההודעה שלכם נשמרה — נסו שוב.', sendUnprepared: 'השיחה עדיין לא מוגדרת במסד הנתונים. בקשו ממנהל האפליקציה להחיל את העדכון האחרון.', reviewFailed: 'לא ניתן היה לשמור כרגע. נסו שוב.', reviewDone: 'נשמר.', reviewGone: 'זה כבר נבדק, ולכן הושאר כפי שהוא.' },
     errorTitle: 'משהו השתבש במסך הזה.',
     errorBody: 'הפעולה האחרונה לא הושלמה, ודבר לא נשמר או הועלה. אפשר לנסות שוב או לחזור אחורה. אם זה חוזר, ספרו למי שהגדיר את האפליקציה מה עשיתם.',
     retry: 'לנסות שוב',
@@ -207,7 +300,7 @@ export const translations = {
 // Server actions return a key, never display text. An unrecognised key means this
 // build and the action disagree: show a localized generic notice rather than an
 // empty line, so a failed operation can never look like a silent success.
-export type MessageMap = 'adminMessages' | 'registerMessages' | 'documentMessages';
+export type MessageMap = 'adminMessages' | 'registerMessages' | 'documentMessages' | 'checkInMessages' | 'chatMessages';
 export function actionMessage(locale: Locale, map: MessageMap, key: string): string {
   if (!key) return '';
   const messages = translations[locale][map] as Record<string, string>;
@@ -227,4 +320,26 @@ export function formatTimestamp(locale: Locale, value: string): string {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(parsed);
+}
+
+// Placeholder substitution for the two strings that carry one. Deliberately minimal: an
+// unknown placeholder is left visible rather than replaced with an empty string, so a
+// missing value can never read as a completed sentence.
+export function fill(text: string, values: Record<string, string>): string {
+  return text.replace(/\{(\w+)\}/g, (whole, name: string) => values[name] ?? whole);
+}
+
+// A reply is composed from translation keys, never from stored prose, so the same decision
+// reads correctly in all three languages. An unknown key falls back to the generic notice
+// rather than disappearing: a reply must never silently lose a line.
+export function replyText(locale: Locale, parts: string[], values: Record<string, string> = {}): string {
+  const table = translations[locale] as unknown as Record<string, string>;
+  return parts.map(key => fill(typeof table[key] === 'string' ? table[key] : translations[locale].messageUnknown, values))
+    .filter(Boolean).join('\n\n');
+}
+
+// Measurement names. An unrecognised kind shows its own code rather than vanishing.
+export function measurementLabel(locale: Locale, kind: string): string {
+  const labels = translations[locale].measurementKinds as Record<string, string>;
+  return labels[kind] ?? kind;
 }
