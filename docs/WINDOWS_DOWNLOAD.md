@@ -85,3 +85,26 @@ not in the folder, so nothing is lost by deleting the old folder afterwards.
 **Still unverified in this release:** authenticated upload and download against Storage,
 and visibility of an uploaded file from the second account on the other computer. Those
 require the account holders' own passwords and must be confirmed by the family.
+
+## v0.5.0-large-uploads.1 — 21 September 2026
+
+- Release: https://github.com/Jinko50/med-assistant/releases/tag/v0.5.0-large-uploads.1
+- Asset: `Med-Assistant-Windows-x64.zip`, 40,061,739 bytes.
+- SHA256: `efa61962f1c2926871aa2147cd37f3da4c60e97523959064650e1a69024b0b1c`
+- Source commit: `3c3bfda` on `main`. Interface, `VERSION.txt` and `MANIFEST.json` all read
+  `0.5.0-large-uploads.1`; verified on the extracted ZIP.
+- Earlier releases are unchanged and still downloadable.
+
+Raises supported originals to 50 MB and moves the transfer off the app server, so the
+40.8 MB scan that produced a full-page error can be uploaded unchanged.
+
+**Requires `database/migrations/004_large_documents.sql` to be applied from the Supabase
+dashboard first.** Until then files above 10 MiB are refused with a clear localized message
+at the first step rather than failing part-way through.
+
+**Install:** close the running app, extract to a NEW folder, run `Start Med Assistant.cmd`,
+and confirm the sign-in footer reads `Version 0.5.0-large-uploads.1`. Close any old browser
+tab — it may still point at the previous app on a different port.
+
+**Still unverified:** a real signed-in upload to live Storage, a download, and visibility
+from the second account on the other computer.
